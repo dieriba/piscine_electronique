@@ -1,0 +1,20 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/avr-gcc",
+      "-mmcu=atmega328p",
+      "-I.",
+      "-DF_CPU=16000000",
+      "-g",
+      "-Os",
+      "-Wall",
+      "-c",
+      "-o",
+      "target/objs/./main.o",
+      "main.c"
+    ],
+    "directory": "/home/dieri/piscine-embedded/module_03/ex00",
+    "file": "/home/dieri/piscine-embedded/module_03/ex00/main.c",
+    "output": "/home/dieri/piscine-embedded/module_03/ex00/target/objs/main.o"
+  }
+]
