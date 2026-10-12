@@ -1,9 +1,7 @@
+#include "uart.h"
 #include <avr/interrupt.h>
 #include <avr/io.h>
 #include <stdint.h>
-
-#include "port.h"
-#include "uart.h"
 #define POW 8
 #define TX_BUFF_SIZE (1 << POW)
 #define RX_BUFF_SIZE (1 << POW)
@@ -41,7 +39,7 @@ void uart_flush(void)
         dummy = UDR0;
 }
 
-void uart_tx_send_byte(uint8_t c)
+void uart_tx_send_byte(char c)
 {
     uint8_t next = pow2_mod(tx_buffer_head + 1, TX_BUFF_SIZE);
     while (next == tx_buffer_tail)
@@ -51,7 +49,7 @@ void uart_tx_send_byte(uint8_t c)
     UCSR0B |= (1 << UDRIE0); /* Enable UDRE interrupt */
 }
 
-void uart_tx_send_str(uint8_t *s)
+void uart_tx_send_str(char *s)
 {
     for (uint16_t i = 0; s[i] != 0; i++)
     {
@@ -79,7 +77,7 @@ ISR(USART_RX_vect)
     if (next != rx_buffer_tail)
     {
         rx_buffer[rx_buffer_head] = c;
-        rx_buffer_head  = next;
+        rx_buffer_head            = next;
     }
 }
 
