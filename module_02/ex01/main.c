@@ -1,0 +1,41 @@
+
+#include "timer.h"
+#include "uart.h"
+
+#include <avr/interrupt.h>
+#include <avr/io.h>
+#include <util/delay.h>
+
+#define UART_BAUDRATE 115200UL
+#define UBRR_VAL ((F_CPU / (16UL * UART_BAUDRATE)) - 1)
+#define MSG "Hello World!\r\n"
+#define PRESCALER 1024UL
+#define TIMER_FREQ (16000000UL / PRESCALER)
+#define VALUE_TO_COMPARE (TIMER_FREQ * 2)
+
+void uart_printstr()
+{
+    uart_send_str(MSG);
+}
+
+ISR(TIMER1_COMPA_vect)
+{
+    uart_printstr();
+}
+
+void init()
+{
+    timer1_set_mode_ctc();
+    timer1_set_prescaler_1024();
+    timer1_interrupt_on_match_a(VALUE_TO_COMPARE);
+    sei();
+}
+
+int main()
+{
+    init();
+    uart_init_tx_rx(UBRR_VAL + 1, SENDER);
+    while (1)
+    {
+    }
+}
