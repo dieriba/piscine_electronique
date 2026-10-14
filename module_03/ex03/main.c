@@ -19,9 +19,6 @@
 #define BACKSPACE 0x7f
 #define ERASE_CHAR_TERM "\b \b"
 #define BASE_LEN 16
-#define RGB_MASK_RED 0xff0000
-#define RGB_MASK_GREEN 0x00ff00
-#define RGB_MASK_BLUEU 0x0000ff
 #define MASK_BYTE 0xff
 
 typedef struct
