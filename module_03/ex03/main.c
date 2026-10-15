@@ -9,8 +9,6 @@
 
 #define BUFFER_SIZE 0x100
 #define MSG_ENTER_RGB "Enter a hex RGB color (#RRGGBB), e.g., #FF0000: "
-#define UART_BAUDRATE 9600
-#define UBRR_VAL ((F_CPU / (16UL * UART_BAUDRATE)) - 1)
 
 #define MSG_ERROR_WRONG_FORMAT                                                                                                                                                                         \
     "ERROR: Invalid RGB color format!\r\n"                                                                                                                                                             \
@@ -112,7 +110,7 @@ int main()
     rgb_color rgb;
     init_gpio();
     init_rgb();
-    uart_init_tx_rx(UBRR_VAL + 1, SENDER | RECEIVER);
+    uart_init_tx_rx(SENDER | RECEIVER);
     while (1)
     {
         uart_tx_send_str(MSG_ENTER_RGB);
