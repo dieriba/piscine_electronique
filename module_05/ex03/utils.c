@@ -1,4 +1,5 @@
 #include "utils.h"
+
 #include <stdint.h>
 
 #define HEX_UPPERCASE "0123456789abcdef"
@@ -12,9 +13,9 @@ void hex_read(char *buffer, uint8_t hex)
     buffer[1] = low_nibble;
 }
 
-static uint8_t number_count_digit(uint16_t number)
+static uint8_t number_count_digit(int32_t number)
 {
-    uint8_t count = number == 0;
+    uint8_t count = number <= 0;
     while (number != 0)
     {
         number /= 10;
@@ -23,14 +24,24 @@ static uint8_t number_count_digit(uint16_t number)
     return count;
 }
 
-uint8_t itoa(char *buffer, uint16_t number)
+uint8_t itoa(char *buffer, int32_t number)
 {
     uint8_t number_nb_digit = number_count_digit(number);
 
-    int8_t len  = number_nb_digit;
+    int8_t len = number_nb_digit;
+    int8_t stop;
+    if (number < 0)
+    {
+        buffer[0] = '-';
+        stop      = 1;
+        number *= -1; //FIX IT OVERFLOW BUG MAY HAPPEN
+    }
+    else
+        stop = 0;
+
     buffer[len] = 0;
     len--;
-    while (len >= 0)
+    while (len >= stop)
     {
         buffer[len] = (number % 10) + '0';
         number /= 10;
