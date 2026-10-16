@@ -10,7 +10,6 @@ void init_port()
 {
     pd2_pull_up_enable();
     pb0_output();
-    pb0_low();
 }
 
 int main()
