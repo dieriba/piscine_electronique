@@ -3,7 +3,6 @@
 #include "port.h"
 #include "timer.h"
 #include "uart.h"
-#include "utils.h"
 
 #include <avr/io.h>
 #include <stdint.h>
