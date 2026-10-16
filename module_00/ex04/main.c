@@ -8,7 +8,6 @@
 #define pow2_mod(numerator, modulus) ((numerator) & ((modulus) - 1))
 #define POW pow2(4)
 #define MASK_PB4_STATE (0b1000)
-#define LOCK_TIME 100
 
 uint8_t value;
 uint8_t mask_clear_prev_val;
@@ -56,6 +55,5 @@ int main()
     {
         button_do_if_new_state(pd2_read, &prev_state_inc_button, inc);
         button_do_if_new_state(pd4_read, &prev_state_dec_button, dec);
-        _delay_ms(LOCK_TIME);
     }
 }

@@ -5,4 +5,5 @@ int main()
 {
     pb0_output();
     pb0_high();
+    while(1) {}
 }

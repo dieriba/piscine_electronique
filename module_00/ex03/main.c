@@ -3,14 +3,13 @@
 #include <avr/io.h>
 
 #define DEBOUNCE_TIME 25 /* time to wait while "de-bouncing" button */
-#define LOCK_INPUT_TIME 100 /* time to wait after a button press */
+#define LOCK_INPUT_TIME 20 /* time to wait after a button press */
 
 
 void init_port()
 {
     pd2_pull_up_enable();
     pb0_output();
-    pb0_high();
 }
 
 int main()
@@ -26,7 +25,8 @@ int main()
             current_input_pin_state = pd2_read();
             if (current_input_pin_state != last_input_pin_state) {
                 last_input_pin_state = current_input_pin_state;
-                pb0_toggle();
+                if (current_input_pin_state == LOW)
+                    pb0_toggle();
             }
         }
         _delay_ms(LOCK_INPUT_TIME);

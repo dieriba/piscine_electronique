@@ -1,6 +1,8 @@
 #ifndef AVR_PORT_UTILS_H
 #define AVR_PORT_UTILS_H
 
+#define LOW 0
+#define HIGH 1
 #include <avr/io.h>
 #include <stdint.h>
 
