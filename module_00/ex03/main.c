@@ -3,7 +3,7 @@
 #include <avr/io.h>
 
 #define DEBOUNCE_TIME 25 /* time to wait while "de-bouncing" button */
-#define LOCK_INPUT_TIME 20 /* time to wait after a button press */
+#define LOCK_INPUT_TIME 10 /* time to wait after a button press */
 
 
 void init_port()
