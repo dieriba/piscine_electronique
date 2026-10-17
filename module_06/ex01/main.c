@@ -10,9 +10,12 @@
 #define AHT20_WAIT_TIME_MS_TRIGGER_MEASUREMENT 80
 #define AHT20_WAIT_TIME_MS_POWER_BOOT 40
 #define AHT20_WAIT_TIME_MS_INIT 10
+#define WAIT_TIME_POLL_STATUS 50
 #define WAIT_TIME_MEASURE 2000
 #define LEN_ARR(arr) (sizeof(arr) / sizeof(*arr))
 
+#define AHT20_MASK_CALIBRATION 0x08
+#define AHT20_MASK_BUSY 0x80
 #define AHT20_MEASURE_LEN 7
 
 typedef enum AHT20_COMMAND
@@ -83,9 +86,8 @@ void AHT20_init(void)
     i2c_write_all_to(AHT20_ADDR, &cmd, sizeof(cmd));
     uint8_t status;
     twi_master_receive_from(AHT20_ADDR, (char *) &status, sizeof(status));
-    if ((status >> 3 & 0x01) == 0) // if CAL = 0
+    if ((status & AHT20_MASK_CALIBRATION) == 0)
     {
-        uart_tx_send_str("INSIDE COND\r\n");
         uint8_t init_commands[] = {AHT20_COMMAND_INIT, 0x08, 0x00};
         i2c_write_all_to(AHT20_ADDR, init_commands, LEN_ARR(init_commands));
         _delay_ms(AHT20_WAIT_TIME_MS_INIT);
@@ -115,8 +117,8 @@ void AHT20_measure(void)
         uint8_t cmd = AHT20_COMMAND_GET_STATUS;
         i2c_write_all_to(AHT20_ADDR, &cmd, sizeof(cmd));
         twi_master_receive_from(AHT20_ADDR, (char *) &status, sizeof(status));
-        _delay_ms(100);
-    } while ((status >> 7 & 0x01) == 1);
+        _delay_ms(WAIT_TIME_POLL_STATUS);
+    } while (status & AHT20_MASK_BUSY);
 
     print_measure();
 }
