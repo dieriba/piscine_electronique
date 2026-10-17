@@ -12,7 +12,7 @@
 #define MASTER_RECEIVER_MODE 0x1
 #define MASTER_TRANSMITTER_MODE 0x0
 #define HEX_BUFFER_SIZE 2
-char  hex_buffer[HEX_BUFFER_SIZE + 1];
+char hex_buffer[HEX_BUFFER_SIZE + 1];
 
 char *twi_get_status_msg(TWI_STATUS status)
 {
@@ -80,25 +80,59 @@ uint8_t twi_start(void)
 void twi_stop()
 {
     TWCR = (1 << TWINT) | (1 << TWSTO) | (1 << TWEN);
-    twi_wait_for_transmission();
 }
 
-uint8_t twi_read_byte_nack(uint8_t *status)
+uint8_t twi_read_byte_nack(uint8_t *data)
 {
-    TWCR       = (1 << TWINT) | (1 << TWEN);
-    uint8_t st = twi_wait_for_transmission();
-    if (status)
-        *status = st;
-    return TWDR;
+    TWCR           = (1 << TWINT) | (1 << TWEN);
+    uint8_t status = twi_wait_for_transmission();
+    *data          = TWDR;
+    return status;
 }
 
-uint8_t twi_read_byte_ack(uint8_t *status)
+uint8_t twi_read_byte_ack(uint8_t *data)
 {
-    TWCR       = (1 << TWINT) | (1 << TWEN) | (1 << TWEA);
-    uint8_t st = twi_wait_for_transmission();
-    if (status)
-        *status = st;
-    return TWDR;
+    TWCR           = (1 << TWINT) | (1 << TWEN) | (1 << TWEA);
+    uint8_t status = twi_wait_for_transmission();
+    *data          = TWDR;
+
+    return status;
+}
+
+uint8_t twi_master_receive_from(uint8_t addr, char *buffer, uint8_t len)
+{
+    uint8_t status = twi_start();
+    if ((status != TWI_STATUS_START) && (status != TWI_STATUS_REPEATED_START))
+        return status;
+    if ((status = twi_set_read_address(addr)) != TWI_STATUS_MR_SLA_ACK)
+        return status;
+
+    uint8_t i = 0;
+    for (; i < len - 1; i++)
+    {
+        uint8_t status = twi_read_byte_ack((uint8_t *) buffer + i);
+        if (status != TWI_STATUS_MR_DATA_ACK)
+            return status;
+    }
+    return twi_read_byte_nack((uint8_t *) buffer + i);
+}
+
+uint8_t twi_master_transmit_to(uint8_t addr, char *buffer, uint8_t len)
+{
+    uint8_t status = twi_start();
+    if ((status != TWI_STATUS_START) && (status != TWI_STATUS_REPEATED_START))
+        return status;
+    if ((status = twi_set_write_address(addr)) != TWI_STATUS_MT_SLA_ACK)
+        return status;
+
+    uint8_t i = 0;
+    for (; i < len - 1; i++)
+    {
+        uint8_t status = twi_write_data(buffer[i]);
+        if (status != TWI_STATUS_MT_DATA_NACK)
+            return status;
+    }
+    return twi_write_data(buffer[i]);
 }
 
 uint8_t twi_set_read_address(uint8_t addr)
