@@ -80,7 +80,6 @@ uint8_t twi_start(void)
 void twi_stop()
 {
     TWCR = (1 << TWINT) | (1 << TWSTO) | (1 << TWEN);
-    twi_wait_for_transmission();
 }
 
 uint8_t twi_read_byte_nack(uint8_t *data)
@@ -97,20 +96,32 @@ uint8_t twi_read_byte_ack(uint8_t *data)
     return twi_wait_for_transmission();
 }
 
-uint8_t twi_readn(char *buffer, uint8_t len)
+uint8_t twi_master_receive_from(uint8_t addr, char *buffer, uint8_t len)
 {
+    uint8_t status = twi_start();
+    if ((status != TWI_STATUS_START) && (status != TWI_STATUS_REPEATED_START))
+        return status;
+    if ((status = twi_set_read_address(addr)) != TWI_STATUS_MR_SLA_ACK)
+        return status;
+
     uint8_t i = 0;
     for (; i < len - 1; i++)
     {
         uint8_t status = twi_read_byte_ack((uint8_t *) buffer + i);
-        if (status != TWI_STATUS_MR_SLA_ACK)
+        if (status != TWI_STATUS_MR_DATA_ACK)
             return status;
     }
     return twi_read_byte_nack((uint8_t *) buffer + i);
 }
 
-uint8_t twi_writen(char *buffer, uint8_t len)
+uint8_t twi_master_transmit_to(uint8_t addr, char *buffer, uint8_t len)
 {
+    uint8_t status = twi_start();
+    if ((status != TWI_STATUS_START) && (status != TWI_STATUS_REPEATED_START))
+        return status;
+    if ((status = twi_set_write_address(addr)) != TWI_STATUS_MT_SLA_ACK)
+        return status;
+
     uint8_t i = 0;
     for (; i < len - 1; i++)
     {

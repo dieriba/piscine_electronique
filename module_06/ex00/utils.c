@@ -34,7 +34,7 @@ uint8_t itoa(char *buffer, int32_t number)
     {
         buffer[0] = '-';
         stop      = 1;
-        number *= -1; //FIX IT OVERFLOW BUG MAY HAPPEN
+        number *= -1; // FIX IT OVERFLOW BUG MAY HAPPEN
     }
     else
         stop = 0;
