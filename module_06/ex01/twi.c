@@ -84,16 +84,19 @@ void twi_stop()
 
 uint8_t twi_read_byte_nack(uint8_t *data)
 {
-    TWCR  = (1 << TWINT) | (1 << TWEN);
-    *data = TWDR;
-    return twi_wait_for_transmission();
+    TWCR           = (1 << TWINT) | (1 << TWEN);
+    uint8_t status = twi_wait_for_transmission();
+    *data          = TWDR;
+    return status;
 }
 
 uint8_t twi_read_byte_ack(uint8_t *data)
 {
-    TWCR  = (1 << TWINT) | (1 << TWEN) | (1 << TWEA);
-    *data = TWDR;
-    return twi_wait_for_transmission();
+    TWCR           = (1 << TWINT) | (1 << TWEN) | (1 << TWEA);
+    uint8_t status = twi_wait_for_transmission();
+    *data          = TWDR;
+
+    return status;
 }
 
 uint8_t twi_master_receive_from(uint8_t addr, char *buffer, uint8_t len)

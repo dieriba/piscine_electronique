@@ -41,11 +41,8 @@ void i2c_write(unsigned char data)
 
 void i2c_write_all_to(uint8_t addr, uint8_t *data, uint8_t len)
 {
-    uart_tx_send_str("i2c_write_all_to 0\r\n");
     twi_start();
-    uart_tx_send_str("i2c_write_all_to 1\r\n");
     twi_set_write_address(addr);
-    uart_tx_send_str("i2c_write_all_to 2\r\n");
     for (uint8_t i = 0; i < len; i++)
     {
         i2c_write(data[i]);
@@ -82,19 +79,23 @@ void print_measure()
 void AHT20_init(void)
 {
     _delay_ms(AHT20_WAIT_TIME_MS_POWER_BOOT);
-
-    uart_tx_send_str("0\r\n");
     uint8_t cmd = AHT20_COMMAND_GET_STATUS;
     i2c_write_all_to(AHT20_ADDR, &cmd, sizeof(cmd));
-    uart_tx_send_str("1\r\n");
     uint8_t status;
     twi_master_receive_from(AHT20_ADDR, (char *) &status, sizeof(status));
     if ((status >> 3 & 0x01) == 0) // if CAL = 0
     {
+        uart_tx_send_str("INSIDE COND\r\n");
         uint8_t init_commands[] = {AHT20_COMMAND_INIT, 0x08, 0x00};
         i2c_write_all_to(AHT20_ADDR, init_commands, LEN_ARR(init_commands));
         _delay_ms(AHT20_WAIT_TIME_MS_INIT);
     }
+    twi_master_receive_from(AHT20_ADDR, (char *) &status, sizeof(status));
+    char hex_buffer[3] = {0};
+    hex_read(hex_buffer, status);
+    uart_tx_send_str("STATUS: ");
+    uart_tx_send_str(hex_buffer);
+    uart_tx_send_str("\r\n");
 }
 
 void i2c_stop(void)
@@ -113,7 +114,6 @@ void AHT20_measure(void)
     {
         uint8_t cmd = AHT20_COMMAND_GET_STATUS;
         i2c_write_all_to(AHT20_ADDR, &cmd, sizeof(cmd));
-
         twi_master_receive_from(AHT20_ADDR, (char *) &status, sizeof(status));
         _delay_ms(100);
     } while ((status >> 7 & 0x01) == 1);
@@ -124,13 +124,8 @@ void AHT20_measure(void)
 int main()
 {
     uart_init_tx_rx(SENDER);
-    uart_tx_send_str("THERE 1\r\n");
     i2c_init();
-    uart_tx_send_str("THERE 2\r\n");
-    //i2c_stop();
-    uart_tx_send_str("THERE 3\r\n");
     AHT20_init();
-    uart_tx_send_str("THERE 4\r\n");
     while (1)
     {
         AHT20_measure();
