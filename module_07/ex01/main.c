@@ -157,8 +157,4 @@ int main()
             hexdump_eeprom(pos_byte_to_highlight);
         }
     }
-
-    while (1)
-    {
-    }
 }
