@@ -53,7 +53,7 @@ void uart_tx_send_byte(char c)
     UCSR0B |= (1 << UDRIE0); /* Enable UDRE interrupt */
 }
 
-void uart_tx_send_str(char *s)
+void uart_tx_send_str(const char *s)
 {
     for (uint16_t i = 0; s[i] != 0; i++)
     {
