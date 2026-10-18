@@ -34,12 +34,12 @@ typedef struct node_config
 {
     char     tag[CONFIG_TAG_SIZE + 1];
     uint32_t magic_number;
-    uint16_t priority;
+    int16_t  priority;
     uint16_t crc;
     uint8_t  id;
 } node_config;
 
-#define ADDR_NODE_CONFIG(i) (node_config *) (i * sizeof(node_config))
+#define ADDR_NODE_CONFIG(i) (i * sizeof(node_config))
 
 uint16_t addr_config;
 #define GET_CURRENT_NODE_CONFIG (node_config *) (addr_config)
@@ -129,17 +129,18 @@ uint8_t is_eeprom_byte_at_eq(uint16_t addr, uint8_t cmp)
     return eeprom_read_byte((const uint8_t *) addr) == cmp;
 }
 
-uint8_t update_config_eeprom(uint8_t offset_field, uint8_t *data, uint16_t len)
+uint8_t update_config_eeprom(uint8_t offset_field, const void *data, uint16_t len)
 {
-    uint16_t addr_field     = addr_config + offset_field;
-    uint16_t end_addr_field = addr_field + len;
+    uint16_t       addr_field     = addr_config + offset_field;
+    uint16_t       end_addr_field = addr_field + len;
+    const uint8_t *src            = data;
     for (; addr_field < end_addr_field; addr_field++)
     {
-        uint8_t b = *data;
+        uint8_t b = *src;
         eeprom_update_byte((uint8_t *) addr_field, b);
         if (!is_eeprom_byte_at_eq(addr_field, b))
             return 0;
-        data++;
+        src++;
     }
 
     return 1;
@@ -176,14 +177,30 @@ void do_status()
 
 void do_set_id(const char *arg)
 {
+
+    // parse 8
+
+    update_config_eeprom(offsetof(node_config, id), arg, FIELD_SIZE(node_config, id));
 }
 
 void do_set_priority(const char *arg)
 {
+
+    // parse16
+
+    update_config_eeprom(offsetof(node_config, priority), arg, FIELD_SIZE(node_config, priority));
 }
 
 void do_set_tag(const char *arg)
 {
+    uint16_t len = strlen(arg);
+    if (len > CONFIG_TAG_SIZE)
+    {
+        // ERROR
+        return;
+    }
+
+    update_config_eeprom(offsetof(node_config, tag), arg, len);
 }
 
 void do_factory_reset()
@@ -192,7 +209,7 @@ void do_factory_reset()
     eeprom_update_byte((unsigned char *) GET_CURRENT_NODE_CONFIG, 0);
     if (eeprom_read_byte((const uint8_t *) GET_CURRENT_NODE_CONFIG) != 0)
     {
-        //CRITICAL ERROR
+        // CRITICAL ERROR
     }
 }
 
@@ -233,8 +250,9 @@ void set_config_addr()
     addr_config = BASE_ADDR_NODE_CONFIG;
     for (uint8_t i = 0; i < NB_CONFIG; i++)
     {
-        node_config *config = ADDR_NODE_CONFIG(i);
-        if (config->magic_number == MAGIC_NUMBER)
+        const uint32_t *config       = (const uint32_t *) ADDR_NODE_CONFIG(i);
+        uint32_t        magic_number = eeprom_read_dword(config);
+        if (magic_number == MAGIC_NUMBER)
         {
             addr_config = i;
             break;
