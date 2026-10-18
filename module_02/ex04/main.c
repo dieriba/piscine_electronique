@@ -50,7 +50,7 @@ uint8_t getline_and_send(char *buffer, uint16_t max_len, char (*transform)(char)
     while (1)
     {
         char c = uart_rx();
-        if (c != '\r' && i >= max_len)
+        if ((c != '\r' && c != BACKSPACE) && i >= max_len)
         {
             while (i > 0)
             {
