@@ -1,4 +1,3 @@
-#include "port.h"
 #include "uart.h"
 #include "utils.h"
 
@@ -8,7 +7,7 @@
 #include <string.h>
 #include <util/delay.h>
 
-#define LINE_HEXDUMP_SIZE 77
+#define LINE_HEXDUMP_SIZE 0x100
 #define LINE_HEXDUMP_OFFSET_HEX_DATA 9
 #define SIZE_EEPROM 0x400
 #define NB_LINE_TO_DUMP (SIZE_EEPROM / 0x10)
@@ -36,6 +35,11 @@ void dump_put_line_at(char *dump, uint16_t cursor, uint16_t pos_byte_to_highligh
         uint16_t        end  = cursor + sizeof(uint32_t);
         for (; cursor < end; cursor++)
         {
+            if (end - cursor == 2)
+            {
+                dump[offset_hex_data] = ' ';
+                offset_hex_data++;
+            }
             uint8_t b = data & 0xFF;
             if (cursor == pos_byte_to_highlight)
             {
@@ -51,12 +55,11 @@ void dump_put_line_at(char *dump, uint16_t cursor, uint16_t pos_byte_to_highligh
                 hex_read(dump + offset_hex_data, b);
                 offset_hex_data += 2; // HEX DIGIT WRITTEN
             }
-            dump[offset_hex_data] = ' ';
-            offset_hex_data++;
             data >>= 8;
         }
+        dump[offset_hex_data] = ' ';
+        offset_hex_data++;
     }
-    pb0_toggle();
     dump[offset_hex_data - 1] = '\r';
     dump[offset_hex_data]     = '\n';
     offset_hex_data++;
@@ -79,7 +82,7 @@ uint8_t getline_and_send(char *buffer, uint16_t max_len)
     while (1)
     {
         char c = uart_rx_blocking_get_byte();
-        if (c != '\r' && i >= max_len)
+        if ((c != '\r' && c != BACKSPACE) && i >= max_len)
         {
             while (i > 0)
             {
@@ -153,5 +156,9 @@ int main()
             eeprom_write_byte((unsigned char *) pos_byte_to_highlight, new_byte_value);
             hexdump_eeprom(pos_byte_to_highlight);
         }
+    }
+
+    while (1)
+    {
     }
 }
