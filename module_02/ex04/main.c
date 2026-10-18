@@ -44,29 +44,41 @@ char char_hide(char c)
     return '*';
 }
 
-uint8_t getline_and_send(char *buffer, char (*transform)(char))
+uint8_t getline_and_send(char *buffer, uint16_t max_len, char (*transform)(char))
 {
     uint8_t i = 0;
     while (1)
     {
-        char c    = uart_rx();
+        char c = uart_rx();
+        if (c != '\r' && i >= max_len)
+        {
+            while (i > 0)
+            {
+                uart_tx_send_str(ERASE_CHAR_TERM);
+                i--;
+            }
+        }
         buffer[i] = c;
-        i++;
         switch (c)
         {
         case '\r':
             uart_tx_send_str("\r\n");
             goto end;
         case BACKSPACE:
+            if (i == 0)
+                continue;
+            i -= 1;
             uart_tx_send_str(ERASE_CHAR_TERM);
             continue;
         default:
-            uart_tx_send_byte(transform(c));
+            uart_tx_send_byte(c);
             break;
         }
+        i++;
     }
 end:
-    return i - 1;
+    buffer[i] = 0;
+    return i;
 }
 
 void init_gpio()
@@ -116,10 +128,10 @@ login:
     uart_init_tx_rx(UBRR_VAL + 1, SENDER | RECEIVER);
     uart_tx_send_str("Enter your login:\r\n");
     uart_tx_send_str("\tusername: ");
-    uint8_t len_input      = getline_and_send(user_input, char_self);
+    uint8_t len_input      = getline_and_send(user_input, MAX_LEN_USER_INPUT, char_self);
     uint8_t valid_username = (len_input == sizeof(USERNAME) - 1) && memcmp(USERNAME, user_input, len_input) == 0;
     uart_tx_send_str("\tpassword: ");
-    len_input              = getline_and_send(user_input, char_hide);
+    len_input              = getline_and_send(user_input, MAX_LEN_USER_INPUT, char_hide);
     uint8_t valid_paswword = (len_input == sizeof(PASSWORD) - 1) && memcmp(PASSWORD, user_input, len_input) == 0;
 
     if (valid_username && valid_paswword)

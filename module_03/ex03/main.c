@@ -59,30 +59,40 @@ char uart_rx()
     return byte;
 }
 
-uint8_t getline_and_send(char *buffer)
+uint8_t getline_and_send(char *buffer, uint16_t max_len)
 {
     uint8_t i = 0;
     while (1)
     {
-        char c    = uart_rx();
+        char c = uart_rx();
+        if (c != '\r' && i >= max_len)
+        {
+            while (i > 0)
+            {
+                uart_tx_send_str(ERASE_CHAR_TERM);
+                i--;
+            }
+        }
         buffer[i] = c;
-        i++;
         switch (c)
         {
         case '\r':
             uart_tx_send_str("\r\n");
-            i--;
-            buffer[i] = 0;
             goto end;
         case BACKSPACE:
+            if (i == 0)
+                continue;
+            i -= 1;
             uart_tx_send_str(ERASE_CHAR_TERM);
             continue;
         default:
             uart_tx_send_byte(c);
             break;
         }
+        i++;
     }
 end:
+    buffer[i] = 0;
     return i;
 }
 
@@ -114,7 +124,7 @@ int main()
     while (1)
     {
         uart_tx_send_str(MSG_ENTER_RGB);
-        uint8_t len_input = getline_and_send(user_input);
+        uint8_t len_input = getline_and_send(user_input, BUFFER_SIZE);
         if (!parse_rgb(&rgb, user_input, len_input))
         {
             uart_tx_send_str(MSG_ERROR_WRONG_FORMAT);
