@@ -148,20 +148,19 @@ uint8_t update_config_eeprom(uint8_t offset_field, uint8_t *data, uint16_t len)
 void node_config_print(node_config *config)
 {
     uart_tx_send_str("Node ID: ");
-    itoa(config->id, NUM_BUFFER, 10); // change to itoa for unsigned
-    uart_tx_send_str("\r\n");
+    utoa(config->id, NUM_BUFFER, 10);
+    uart_tx_send_str_with_nl(NUM_BUFFER);
 
     uart_tx_send_str("Priority: ");
-    itoa(config->priority, NUM_BUFFER, 10);
-    uart_tx_send_str("\r\n");
+    utoa(config->priority, NUM_BUFFER, 10);
+    uart_tx_send_str_with_nl(NUM_BUFFER);
 
     uart_tx_send_str("Slot: ");
-    itoa(addr_config / sizeof(node_config), NUM_BUFFER, 10);
-    uart_tx_send_str("\r\n");
+    utoa(addr_config / sizeof(node_config), NUM_BUFFER, 10);
+    uart_tx_send_str_with_nl(NUM_BUFFER);
 
     uart_tx_send_str("Tag: ");
-    uart_tx_send_str(config->tag);
-    uart_tx_send_str("\r\n");
+    uart_tx_send_str_with_nl(config->tag);
 }
 
 void do_status()
@@ -175,7 +174,6 @@ void do_status()
 
 void do_set_id(const char *arg)
 {
-    
 }
 
 void do_set_priority(const char *arg)

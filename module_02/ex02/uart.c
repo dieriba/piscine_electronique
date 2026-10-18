@@ -58,6 +58,15 @@ void uart_tx_send_str(char *s)
     }
 }
 
+void uart_tx_send_str_with_nl(char *s)
+{
+    for (uint16_t i = 0; s[i] != 0; i++)
+    {
+        uart_tx_send_byte(s[i]);
+    }
+    uart_tx_send_str("\r\n");
+}
+
 ISR(USART_UDRE_vect)
 {
     if (tx_buffer_head != tx_buffer_tail)
