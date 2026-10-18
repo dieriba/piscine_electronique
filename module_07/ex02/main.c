@@ -148,11 +148,13 @@ uint8_t update_config_eeprom(uint8_t offset_field, uint8_t *data, uint16_t len)
 void node_config_print(node_config *config)
 {
     uart_tx_send_str("Node ID: ");
-    utoa(config->id, NUM_BUFFER, 10);
+    uint32_t id = eeprom_read_dword((const uint32_t *) &config->id);
+    utoa(id, NUM_BUFFER, 10);
     uart_tx_send_str_with_nl(NUM_BUFFER);
 
     uart_tx_send_str("Priority: ");
-    utoa(config->priority, NUM_BUFFER, 10);
+    uint16_t priority = eeprom_read_word((const uint16_t *) &config->priority);
+    utoa(priority, NUM_BUFFER, 10);
     uart_tx_send_str_with_nl(NUM_BUFFER);
 
     uart_tx_send_str("Slot: ");
@@ -160,7 +162,7 @@ void node_config_print(node_config *config)
     uart_tx_send_str_with_nl(NUM_BUFFER);
 
     uart_tx_send_str("Tag: ");
-    uart_tx_send_str_with_nl(config->tag);
+    // add read
 }
 
 void do_status()
@@ -186,6 +188,12 @@ void do_set_tag(const char *arg)
 
 void do_factory_reset()
 {
+
+    eeprom_update_byte((unsigned char *) GET_CURRENT_NODE_CONFIG, 0);
+    if (eeprom_read_byte((const uint8_t *) GET_CURRENT_NODE_CONFIG) != 0)
+    {
+        //CRITICAL ERROR
+    }
 }
 
 void do_node_command(node_command command, const char *cmd, const char *arg)
