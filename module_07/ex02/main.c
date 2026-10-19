@@ -1,6 +1,8 @@
 #include "uart.h"
 
 #include <avr/eeprom.h>
+#include <ctype.h>
+#include <errno.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -12,8 +14,9 @@
 #define ERASE_CHAR_TERM "\b \b"
 #define MAX_INPUT_SIZE 0x100
 
-#define NB_CONFIG 4
+#define NB_CONFIG 4 // MUST STATYS A POWER OF 2
 #define CONFIG_TAG_SIZE 32
+#define LEN_NUMBER 11
 
 #define NODE_COMMAND_STATUS_STR "STATUS"
 #define NODE_COMMAND_SET_ID_STR "SET_ID"
@@ -21,28 +24,32 @@
 #define NODE_COMMAND_SET_TAG_STR "SET_TAG"
 #define NODE_COMMAND_SET_SLOT_STR "SET_SLOT"
 #define NODE_COMMAND_FACTORY_RESET_STR "FACTORY_RESET"
+#define EEPROM_ERR_MSG_CRITICAL "CRITICAL EEPROM FAILURE."
+#define EEPROM_ERR_MSG_DETECTED_CORRUPTION "Corruption detected."
+#define EEPROM_MSG_RELOCATION "Relocating config to slot "
+#define EPPROM_ERR_MSG_INTEGRETY_CHECK "CRITICAL: Data corruption detected!"
+#define EEPROM_MSG_NODE_UNCONFIGURED "Node unconfigured"
 #define LEN_LITERAL_STR(s) (sizeof(s) - 1)
 #define MAGIC_NUMBER 0xDEEDBEEF
-
-#define BASE_ADDR_NODE_CONFIG 0
+#define pow2_mod(numerator, modulus) ((numerator) & ((modulus) - 1))
+typedef uint8_t (*parse_func)(char *arg, void *output, uint16_t *len);
 
 #define FIELD_SIZE(type, field) sizeof(((type *) 0)->field)
-#define LEN_NUMBER 11
-char NUM_BUFFER[LEN_NUMBER + 1];
 
 typedef struct node_config
 {
     char     tag[CONFIG_TAG_SIZE + 1];
     uint32_t magic_number;
-    int16_t  priority;
+    uint32_t id;
     uint16_t crc;
-    uint8_t  id;
+    int16_t  priority;
+    uint32_t version;
 } node_config;
 
 #define ADDR_NODE_CONFIG(i) (i * sizeof(node_config))
 
-uint16_t addr_config;
-#define GET_CURRENT_NODE_CONFIG (node_config *) (addr_config)
+uint16_t curr_slot;
+#define GET_CURRENT_NODE_CONFIG (ADDR_NODE_CONFIG(curr_slot))
 
 typedef enum node_command
 {
@@ -81,15 +88,15 @@ node_command parse_command(char *command, char **arg)
     if (check_command_with_args(command, NODE_COMMAND_SET_TAG_STR, LEN_LITERAL_STR(NODE_COMMAND_SET_TAG_STR), arg))
         return NODE_COMMAND_SET_TAG;
 
-    if (check_command_with_args(command, NODE_COMMAND_FACTORY_RESET_STR, LEN_LITERAL_STR(NODE_COMMAND_FACTORY_RESET_STR), arg))
+    if (strcmp(command, NODE_COMMAND_FACTORY_RESET_STR) == 0)
         return NODE_COMMAND_FACTORY_RESET;
 
     return NODE_COMMAND_UNKNOWN;
 }
 
-uint8_t getline_and_send(char *buffer, uint16_t max_len)
+uint16_t getline_and_send(char *buffer, uint16_t max_len)
 {
-    uint8_t i = 0;
+    uint16_t i = 0;
     while (1)
     {
         char c = uart_rx_blocking_get_byte();
@@ -124,21 +131,37 @@ end:
     return i;
 }
 
-uint8_t is_eeprom_byte_at_eq(uint16_t addr, uint8_t cmp)
+uint16_t update_crc(uint16_t crc, void *data, uint16_t len)
 {
-    return eeprom_read_byte((const uint8_t *) addr) == cmp;
+    unsigned char *p = data;
+    for (uint16_t i = 0; i < len; i++)
+    {
+        crc = _crc16_update(crc, p[i]);
+    }
+
+    return crc;
 }
 
-uint8_t update_config_eeprom(uint8_t offset_field, const void *data, uint16_t len)
+uint16_t calcul_crc(node_config *config)
 {
-    uint16_t       addr_field     = addr_config + offset_field;
+    uint16_t crc = 0;
+    crc          = update_crc(crc, &config->id, sizeof(config->id));
+    crc          = update_crc(crc, &config->priority, sizeof(config->priority));
+    crc          = update_crc(crc, config->tag, CONFIG_TAG_SIZE + 1);
+    return crc;
+}
+
+uint8_t update_config_eeprom(uint16_t slot, uint8_t offset_field, const void *data, uint16_t len)
+{
+
+    uint16_t       addr_field     = ADDR_NODE_CONFIG(slot) + offset_field;
     uint16_t       end_addr_field = addr_field + len;
     const uint8_t *src            = data;
     for (; addr_field < end_addr_field; addr_field++)
     {
         uint8_t b = *src;
         eeprom_update_byte((uint8_t *) addr_field, b);
-        if (!is_eeprom_byte_at_eq(addr_field, b))
+        if (eeprom_read_byte((const uint8_t *) addr_field) != b)
             return 0;
         src++;
     }
@@ -148,72 +171,214 @@ uint8_t update_config_eeprom(uint8_t offset_field, const void *data, uint16_t le
 
 void node_config_print(node_config *config)
 {
+    char NUM_BUFFER[LEN_NUMBER + 1];
     uart_tx_send_str("Node ID: ");
-    uint32_t id = eeprom_read_dword((const uint32_t *) &config->id);
-    utoa(id, NUM_BUFFER, 10);
+    ultoa(config->id, NUM_BUFFER, 10);
     uart_tx_send_str_with_nl(NUM_BUFFER);
 
     uart_tx_send_str("Priority: ");
-    uint16_t priority = eeprom_read_word((const uint16_t *) &config->priority);
-    utoa(priority, NUM_BUFFER, 10);
+    itoa(config->priority, NUM_BUFFER, 10);
     uart_tx_send_str_with_nl(NUM_BUFFER);
 
     uart_tx_send_str("Slot: ");
-    utoa(addr_config / sizeof(node_config), NUM_BUFFER, 10);
+    utoa(curr_slot, NUM_BUFFER, 10);
     uart_tx_send_str_with_nl(NUM_BUFFER);
 
-    uart_tx_send_str("Tag: ");
-    // add read
+    uart_tx_send_str("Tag: \"");
+    const uint8_t *addr_tag = (const uint8_t *) config->tag;
+    for (uint8_t i = 0; addr_tag[i]; i++)
+    {
+        uart_tx_send_byte(addr_tag[i]);
+    }
+    uart_tx_send_str_with_nl("\"");
+}
+
+void init_node_config_from_slot(node_config *config, uint8_t slot)
+{
+    eeprom_read_block(config, (void *) ADDR_NODE_CONFIG(slot), sizeof(*config));
+}
+
+void send_err_msg(const char *prefix, const char *msg)
+{
+    uart_tx_send_str(prefix);
+    uart_tx_send_str_with_nl(msg);
 }
 
 void do_status()
 {
-    node_config *config = GET_CURRENT_NODE_CONFIG;
-
-    // do crc check
-
-    node_config_print(config);
-}
-
-void do_set_id(const char *arg)
-{
-
-    // parse 8
-
-    update_config_eeprom(offsetof(node_config, id), arg, FIELD_SIZE(node_config, id));
-}
-
-void do_set_priority(const char *arg)
-{
-
-    // parse16
-
-    update_config_eeprom(offsetof(node_config, priority), arg, FIELD_SIZE(node_config, priority));
-}
-
-void do_set_tag(const char *arg)
-{
-    uint16_t len = strlen(arg);
-    if (len > CONFIG_TAG_SIZE)
+    uint16_t found = -1;
+    uint16_t i     = curr_slot;
+    do
     {
-        // ERROR
+        uint32_t magic_number = eeprom_read_dword((void *) ADDR_NODE_CONFIG(i) + offsetof(node_config, magic_number));
+        if (magic_number == MAGIC_NUMBER)
+        {
+            curr_slot = i;
+            found     = i;
+            break;
+        }
+        i = pow2_mod(i + 1, NB_CONFIG);
+    } while (i != curr_slot);
+
+    if (found == (uint16_t) -1)
+    {
+        uart_tx_send_str_with_nl(EEPROM_MSG_NODE_UNCONFIGURED);
         return;
     }
 
-    update_config_eeprom(offsetof(node_config, tag), arg, len);
+    node_config config;
+    init_node_config_from_slot(&config, curr_slot);
+    uint16_t crc = calcul_crc(&config);
+
+    if (crc != config.crc)
+    {
+        uart_tx_send_str_with_nl(EPPROM_ERR_MSG_INTEGRETY_CHECK);
+        return;
+    }
+
+    node_config_print(&config);
 }
 
 void do_factory_reset()
 {
-
-    eeprom_update_byte((unsigned char *) GET_CURRENT_NODE_CONFIG, 0);
-    if (eeprom_read_byte((const uint8_t *) GET_CURRENT_NODE_CONFIG) != 0)
+    uint8_t corrupt_byte = 0;
+    if (!update_config_eeprom(curr_slot, offsetof(node_config, magic_number), &corrupt_byte, sizeof(corrupt_byte)))
     {
-        // CRITICAL ERROR
+        uart_tx_send_str_with_nl("FACTORY RESET COULD NOT SUCCEED");
     }
 }
 
-void do_node_command(node_command command, const char *cmd, const char *arg)
+uint8_t parse_id(char *arg, void *output, uint16_t *len)
+{
+    if (arg[0] == '-')
+    {
+        send_err_msg("Invalid id (only positive id allowed): ", arg);
+        return 0;
+    }
+
+    *len = FIELD_SIZE(node_config, id);
+    char *end;
+    errno       = 0;
+    uint32_t id = strtoul(arg, &end, 10);
+    if (arg == end || *end != '\0' || errno == ERANGE)
+    {
+        send_err_msg("INVALID ID (only 0-9 char allowed): ", arg);
+        return 0;
+    }
+
+    memcpy(output, &id, sizeof(id));
+    return 1;
+}
+
+uint8_t parse_priority(char *arg, void *output, uint16_t *len)
+{
+    *len = FIELD_SIZE(node_config, priority);
+    char *end;
+    errno            = 0;
+    int32_t priority = strtol(arg, &end, 10);
+    if (arg == end || *end != '\0' || priority < INT16_MIN || priority > INT16_MAX)
+    {
+        send_err_msg("INVALID PRIORITY: ", arg);
+        return 0;
+    }
+    int16_t value = (int16_t) priority;
+    memcpy(output, &value, FIELD_SIZE(node_config, priority));
+    return 1;
+}
+
+uint8_t parse_tag(char *arg, void *output, uint16_t *len)
+{
+    if (arg[0] != '"')
+    {
+        send_err_msg("INVALID TAG (missing opennig quote): ", arg);
+        return 0;
+    }
+
+    uint8_t i = 0;
+    arg++;
+    while (arg[i] != 0 && arg[i] != '"')
+    {
+        if (!isalnum(arg[i]) && arg[i] != '_' && arg[i] != '-')
+        {
+            send_err_msg("INVALID TAG (A-Z, a-z, 0-9, _, -): ", arg - 1);
+            return 0;
+        }
+        if (i >= CONFIG_TAG_SIZE)
+        {
+            send_err_msg("INVALID TAG (too long): ", arg - 1);
+            return 0;
+        }
+        i++;
+    }
+
+    if (arg[i] == 0)
+    {
+        send_err_msg("Invalid tag (missing closing quote): ", arg - 1);
+        return 0;
+    }
+
+    if (arg[i] == '"' && arg[i + 1] != 0)
+    {
+        send_err_msg("Invalid tag (quote is not last): ", arg - 1);
+        return 0;
+    }
+    arg[i] = 0;
+    *len   = CONFIG_TAG_SIZE + 1;
+    memcpy(output, arg, *len);
+    return 1;
+}
+
+uint8_t node_copy_config_to_slot(uint8_t to, node_config *src)
+{
+    return update_config_eeprom(to, 0, src, sizeof(*src));
+}
+
+void node_save_data(char *arg, uint8_t offset_field, parse_func parser)
+{
+    uint16_t len_data;
+    char     data_buffer[CONFIG_TAG_SIZE + 1];
+
+    if (!parser(arg, data_buffer, &len_data))
+        return;
+
+    node_config config;
+    init_node_config_from_slot(&config, curr_slot);
+    if (config.magic_number != MAGIC_NUMBER)
+        memset(&config, 0, sizeof(config));
+    config.magic_number = MAGIC_NUMBER;
+    memcpy(((char *) (&config)) + offset_field, data_buffer, len_data);
+    config.crc = calcul_crc(&config);
+    uint8_t success;
+#ifdef TRIGGER_RELOC
+    success = 0;
+#else
+    success = node_copy_config_to_slot(curr_slot, &config);
+#endif
+    if (!success)
+    {
+        do_factory_reset();
+        uart_tx_send_str_with_nl(EEPROM_ERR_MSG_DETECTED_CORRUPTION);
+        for (uint8_t i = pow2_mod(curr_slot + 1, NB_CONFIG); i != curr_slot; i = pow2_mod(i + 1, NB_CONFIG))
+        {
+            uart_tx_send_str(EEPROM_MSG_RELOCATION);
+            itoa(i, data_buffer, 10);
+            uart_tx_send_str(data_buffer);
+            uart_tx_send_str("... ");
+
+            if (node_copy_config_to_slot(i, &config))
+            {
+                uart_tx_send_str_with_nl("Success");
+                uart_tx_send_str_with_nl("Done.");
+                curr_slot = i;
+                return;
+            }
+            uart_tx_send_str_with_nl("Fail");
+        }
+        uart_tx_send_str_with_nl(EEPROM_ERR_MSG_CRITICAL);
+    }
+}
+
+void do_node_command(node_command command, const char *cmd, char *arg)
 {
     switch (command)
     {
@@ -222,15 +387,15 @@ void do_node_command(node_command command, const char *cmd, const char *arg)
         break;
 
     case NODE_COMMAND_SET_ID:
-        do_set_id(arg);
+        node_save_data(arg, offsetof(node_config, id), parse_id);
         break;
 
     case NODE_COMMAND_SET_PRIORITY:
-        do_set_priority(arg);
+        node_save_data(arg, offsetof(node_config, priority), parse_priority);
         break;
 
     case NODE_COMMAND_SET_TAG:
-        do_set_tag(arg);
+        node_save_data(arg, offsetof(node_config, tag), parse_tag);
         break;
 
     case NODE_COMMAND_FACTORY_RESET:
@@ -247,14 +412,13 @@ void do_node_command(node_command command, const char *cmd, const char *arg)
 
 void set_config_addr()
 {
-    addr_config = BASE_ADDR_NODE_CONFIG;
+    node_config config;
     for (uint8_t i = 0; i < NB_CONFIG; i++)
     {
-        const uint32_t *config       = (const uint32_t *) ADDR_NODE_CONFIG(i);
-        uint32_t        magic_number = eeprom_read_dword(config);
-        if (magic_number == MAGIC_NUMBER)
+        init_node_config_from_slot(&config, i);
+        if (config.magic_number == MAGIC_NUMBER && calcul_crc(&config) == config.crc)
         {
-            addr_config = i;
+            curr_slot = i;
             break;
         }
     }

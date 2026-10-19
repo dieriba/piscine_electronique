@@ -76,9 +76,9 @@ void hexdump_eeprom(uint16_t pos_byte_to_highlight)
     }
 }
 
-uint8_t getline_and_send(char *buffer, uint16_t max_len)
+uint16_t getline_and_send(char *buffer, uint16_t max_len)
 {
-    uint8_t i = 0;
+    uint16_t i = 0;
     while (1)
     {
         char c = uart_rx_blocking_get_byte();
