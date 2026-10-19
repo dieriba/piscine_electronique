@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <util/delay.h>
+
 #define UART_BAUDRATE 9600
 #define UBRR_VAL ((F_CPU / (16UL * UART_BAUDRATE)) - 1)
 
@@ -123,34 +124,30 @@ void led_toggle()
 
 int main()
 {
-    char user_input[MAX_LEN_USER_INPUT] = {0};
-login:
-    uart_init_tx_rx(UBRR_VAL + 1, SENDER | RECEIVER);
-    uart_tx_send_str("Enter your login:\r\n");
-    uart_tx_send_str("\tusername: ");
-    uint8_t len_input      = getline_and_send(user_input, MAX_LEN_USER_INPUT, char_self);
-    uint8_t valid_username = (len_input == sizeof(USERNAME) - 1) && memcmp(USERNAME, user_input, len_input) == 0;
-    uart_tx_send_str("\tpassword: ");
-    len_input              = getline_and_send(user_input, MAX_LEN_USER_INPUT, char_hide);
-    uint8_t valid_paswword = (len_input == sizeof(PASSWORD) - 1) && memcmp(PASSWORD, user_input, len_input) == 0;
-
-    if (valid_username && valid_paswword)
-    {
-        led_reset();
-        uart_tx_send_str(MSG_WELCOME USERNAME "!\r\n");
-        uart_tx_send_str("Shall we play a game?\r\n");
-        led_toggle();
-    }
-    else
-    {
-        pb1_high();
-        uart_tx_send_str(ERROR_MSG_BAD_USERNAME);
-        led_dramatic_effect();
-        led_reset();
-        goto login;
-    }
-
     while (1)
     {
+        char user_input[MAX_LEN_USER_INPUT] = {0};
+        uart_init_tx_rx(UBRR_VAL + 1, SENDER | RECEIVER);
+        uart_tx_send_str("Enter your login:\r\n");
+        uart_tx_send_str("\tusername: ");
+        uint8_t len_input      = getline_and_send(user_input, MAX_LEN_USER_INPUT, char_self);
+        uint8_t valid_username = (len_input == sizeof(USERNAME) - 1) && memcmp(USERNAME, user_input, len_input) == 0;
+        uart_tx_send_str("\tpassword: ");
+        len_input              = getline_and_send(user_input, MAX_LEN_USER_INPUT, char_hide);
+        uint8_t valid_paswword = (len_input == sizeof(PASSWORD) - 1) && memcmp(PASSWORD, user_input, len_input) == 0;
+
+        if (valid_username && valid_paswword)
+        {
+            led_reset();
+            uart_tx_send_str(MSG_WELCOME USERNAME "!\r\n");
+            uart_tx_send_str("Shall we play a game?\r\n");
+            led_toggle();
+        }
+        else
+        {
+            uart_tx_send_str(ERROR_MSG_BAD_USERNAME);
+            led_dramatic_effect();
+            led_reset();
+        }    
     }
 }
