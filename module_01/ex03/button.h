@@ -6,7 +6,7 @@
 
 #define LOW 0
 #define HIGH 1
-#define DEBOUNCE_TIME 50
+#define DEBOUNCE_TIME 30
 
 
 typedef uint8_t (*read_input_pin)(void);

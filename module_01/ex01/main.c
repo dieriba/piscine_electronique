@@ -23,7 +23,7 @@ Now the delay between each cycle is 0.064 ms, so the counter needs to count:
 
 500 / 0.064 = 7812.5 ticks.
 
-Since we're using CTC mode, the counter counts from 0 to OCR1A (OCR1A + 1 ticks).
+Since we're using CTC mode, the counter counts from 0 to OCR1A.
 We'll choose OCR1A = 7812, which gives us:
 
 (7812 + 1) * 0.064 = 500.032 ms.
@@ -31,30 +31,26 @@ We'll choose OCR1A = 7812, which gives us:
 Each time Timer1 reaches 7812, approximately 500 ms have passed, and we can toggle the LED.
 */
 
-#define VALUE_TO_COMPARE 7812
+#define VALUE_TO_COMPARE (7812 + 1)
 
-void __attribute__((signal, used)) __vector_11(void)
-{
-    pb1_toggle();
-}
-
-void enable_interrupt()
-{
-    __asm__ __volatile__("sei" ::: "memory");
-}
 
 void init_gpio()
 {
     pb1_output();
-    timer1_ctc();
-    timer1_interrupt_on_ocr1a_match(VALUE_TO_COMPARE);
-    timer1_prescaler_1024();
-    enable_interrupt();
+}
+
+void init_timer()
+{
+    timer1_set_mode_ctc();
+    timer1_set_compare_a(VALUE_TO_COMPARE);
+    timer1_set_com_toggle_oc1a();
+    timer1_set_prescaler_1024();
 }
 
 int main()
 {
     init_gpio();
+    init_timer();
     while (1)
     {
     }

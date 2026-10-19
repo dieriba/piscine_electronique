@@ -1,5 +1,5 @@
 #include "port.h"
-
+#include <util/delay.h>
 #include <stdint.h>
 
 #ifndef F_CPU
@@ -48,7 +48,6 @@ void init_gpio()
 int main()
 {
     init_gpio();
-    wait_half_sec();
     while (1)
     {
         pb1_toggle();

@@ -10,21 +10,6 @@
 
 #define PRESCALER 1024UL
 
-/*
-Since the CPU frequency is at 16 MHz, the delay between each cycle is 0.0000625 ms.
-The Timer1 counter increments its value at each clock cycle, which means that every 0.0000625 ms there will be an increment.
-Our goal is to toggle the LED every 500 ms, so at 16 MHz CPU frequency we'd need to toggle each time the counter reaches 8,000,000,
-which is not possible since the counter is 16 bits and has a max value of (2**16 - 1 = 65535).
-
-There are 2 solutions: either count how many times an overflow happens or reduce the frequency so we know a specific counter value means approximately 500 ms have passed.
-
-Prescalers can help us achieve this idea since they allow us to reduce the frequency of the clock by integer division.
-There are many values, but we'll choose 1024.
-
-If 16 MHz is the current frequency, with a prescaler of 1024 we'll now have (16,000,000 / 1024) = 15,625 Hz.
-
-*/
-
 #define TOP 15625UL
 #define SLOT 10UL
 #define VALUE_TO_COMPARE (TOP / 10)
@@ -34,6 +19,9 @@ uint8_t  idx_a;
 uint8_t  prev_state_inc_button;
 uint8_t  prev_state_dec_button;
 
+/*
+    Precompute duty cycle and store it in memory
+*/
 void init_array_of_a()
 {
     for (uint8_t i = 0; i < SLOT; i++)
@@ -44,6 +32,10 @@ void init_array_of_a()
     }
 }
 
+
+/*
+    Update OCR1A with next duty cycle up if possible else keep the current one
+*/
 void inc()
 {
     if (idx_a >= (SLOT - 1))
@@ -52,6 +44,10 @@ void inc()
     timer1_set_compare_a(A[idx_a]);
 }
 
+
+/*
+    Update OCR1A with previous duty cycle up if possible else keep the current one
+*/
 void dec()
 {
     if (idx_a == 0)
@@ -60,20 +56,24 @@ void dec()
     timer1_set_compare_a(A[idx_a]);
 }
 
-void init()
+void init_timer()
 {
-    init_array_of_a();
-    pb1_output();
     timer1_set_pwm_non_inverting_oc1a();
-    timer1_set_mode_fast_pwm_top_icr();
-    timer1_set_compare_icr(TOP);
+    timer1_set_mode_fast_pwm_top_icr(TOP);
     timer1_set_prescaler_1024();
     timer1_set_compare_a(A[0]);
 }
 
+void init_gpio()
+{
+    pb1_output();
+}
+
 int main()
 {
-    init();
+    init_array_of_a();
+    init_gpio();
+    init_timer();
     while (1)
     {
         button_do_if_new_state(pd2_read, &prev_state_inc_button, inc);

@@ -19,7 +19,7 @@ TARGET_ELF     				:= $(BIN_DIR)/$(TARGET_BASENAME).elf
 TARGET_HEX     				:= $(BIN_DIR)/$(TARGET_BASENAME).hex
 
 
-CFLAGS  					:= -mmcu=$(MCU) -MMD -MP -DF_CPU=$(F_CPU) -g -Os -Wall
+CFLAGS  					:= -mmcu=$(MCU) -Wall -Werror -Wextra -MMD -MP -DF_CPU=$(F_CPU) -g -Os -Wall
 
 DEVICE						:= /dev/ttyUSB0
 
