@@ -21,7 +21,7 @@ TARGET_HEX     				:= $(BIN_DIR)/$(TARGET_BASENAME).hex
 
 CFLAGS  					:= -Wall -Werror -Wextra -mmcu=$(MCU) -I. -MMD -MP -DDEBUG -DF_CPU=$(F_CPU) -g -Os -Wall
 
-DEVICE						:= /dev/ttyUSB12
+DEVICE						:= /dev/ttyUSB0
 
 .PHONY: all
 all: hex flash
