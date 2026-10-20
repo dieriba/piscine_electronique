@@ -12,16 +12,12 @@
 #define WAIT_TIME_MS 1000
 
 #define APA102_HEADER 0xE0
-#define DURATION_CYCLE_MS 1000
-#define DURATION_LED_ON_MS 250
-#define DURATION_BEFORE_RESTART_CYCLE_MS (DURATION_CYCLE_MS - (DURATION_LED_ON_MS * APA102_LED_COUNT))
 #define TIMER1_FREQ 15625
 #define MS 0.064
 #define TARGET_WAIT_TIME_MS 20
 #define B ((TARGET_WAIT_TIME_MS / MS) + 1)
 
 #define ADC_MAX 255
-
 #define ADC_33_PCT (ADC_MAX / 3)
 #define ADC_66_PCT (ADC_MAX * 2 / 3)
 #define ADC_100_PCT ADC_MAX
@@ -95,6 +91,7 @@ void adc_init()
     adc_enable_auto_trigger_src_timer1_compare_b();
     adc_read_set_adc0_8_bits();
 }
+
 void init_timer1()
 {
     timer1_set_compare_b(B);
