@@ -6,7 +6,7 @@
 #include <stdint.h>
 #include <util/delay.h>
 
-#define UART_BAUDRATE 9600
+#define UART_BAUDRATE 115200UL
 #define UBRR_VAL ((F_CPU / (16UL * UART_BAUDRATE)) - 1)
 
 void uart_tx(uint8_t byte)

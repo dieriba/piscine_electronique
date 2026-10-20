@@ -7,7 +7,7 @@
 #include <stdint.h>
 #include <util/delay.h>
 
-#define UART_BAUDRATE 9600
+#define UART_BAUDRATE 115200UL
 #define UBRR_VAL ((F_CPU / (16UL * UART_BAUDRATE)) - 1)
 
 #define USERNAME "dieriba"
@@ -20,10 +20,6 @@
 #define MSG_WELCOME "Hello, "
 
 #define ERROR_MSG_BAD_USERNAME "Bad combinaison username/password\r\n"
-
-void uart_tx(uint8_t byte)
-{
-}
 
 char uart_rx()
 {
@@ -44,9 +40,9 @@ char char_hide(char c)
     return '*';
 }
 
-uint8_t getline_and_send(char *buffer, uint16_t max_len, char (*transform)(char))
+uint16_t getline_and_send(char *buffer, uint16_t max_len, char (*transform)(char))
 {
-    uint8_t i = 0;
+    uint16_t i = 0;
     while (1)
     {
         char c = uart_rx();
@@ -71,7 +67,7 @@ uint8_t getline_and_send(char *buffer, uint16_t max_len, char (*transform)(char)
             uart_tx_send_str(ERASE_CHAR_TERM);
             continue;
         default:
-            uart_tx_send_byte(c);
+            uart_tx_send_byte(transform(c));
             break;
         }
         i++;
@@ -123,10 +119,10 @@ void led_toggle()
 
 int main()
 {
+    uart_init_tx_rx(UBRR_VAL + 1, SENDER | RECEIVER);
     while (1)
     {
         char user_input[MAX_LEN_USER_INPUT] = {0};
-        uart_init_tx_rx(UBRR_VAL, SENDER | RECEIVER);
         uart_tx_send_str("Enter your login:\r\n");
         uart_tx_send_str("\tusername: ");
         getline_and_send(user_input, MAX_LEN_USER_INPUT, char_self);

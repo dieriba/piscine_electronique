@@ -33,8 +33,8 @@ void init_timer()
 
 int main()
 {
-    init_timer();
     uart_init_tx_rx(UBRR_VAL + 1, SENDER);
+    init_timer();
     while (1)
     {
     }
