@@ -1,10 +1,10 @@
 #include "port.h"
 #include "timer.h"
 #include "uart.h"
+#include "utils.h"
 
 #include <avr/io.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <util/delay.h>
 
 #define BUFFER_SIZE 0x100
@@ -93,8 +93,8 @@ uint8_t parse_rgb(rgb_color *rgb, char *buffer, uint8_t len_input)
 {
     if (len_input != (sizeof(FORMAT_MSG) - 1) || (buffer[0] != FORMAT_MSG[0]))
         return 0;
-    char    *end_ptr;
-    uint32_t value = strtol(buffer + 1, &end_ptr, BASE_LEN);
+    const char    *end_ptr;
+    uint32_t value = hex_str_to_unsigned(buffer + 1, &end_ptr);
 
     if (*end_ptr != 0)
         return 0;
