@@ -104,7 +104,7 @@ void init_timer1()
     timer1_set_prescaler_1024();
 }
 
-ISR(ADC_vect)
+SIGNAL(ADC_vect)
 {
     color_value = ADCH;
 

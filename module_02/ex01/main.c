@@ -18,7 +18,7 @@ void uart_printstr()
     uart_tx_send_str_with_nl(MSG);
 }
 
-ISR(TIMER1_COMPA_vect)
+SIGNAL(TIMER1_COMPA_vect)
 {
     uart_printstr();
 }
@@ -28,7 +28,7 @@ void init_timer()
     timer1_set_mode_ctc();
     timer1_set_prescaler_1024();
     timer1_interrupt_on_match_a(VALUE_TO_COMPARE);
-    sei(); /*ENABLE GLOBAL INTERRUPT*/
+    __asm__ __volatile__("sei" ::: "memory"); /*ENABLE GLOBAL INTERRUPT*/
 }
 
 int main()

@@ -102,7 +102,7 @@ void init_timer1()
 
 static const rgb_color red = {0xff, 0, 0};
 
-ISR(ADC_vect)
+SIGNAL(ADC_vect)
 {
     uint8_t rv1 = ADCH;
 

@@ -21,7 +21,7 @@ uint16_t duty_cycles[NB_DUTY_CYCLE];
 uint8_t  timer0_ovf_count;
 uint8_t  idx;
 
-ISR(TIMER0_OVF_vect)
+SIGNAL(TIMER0_OVF_vect)
 {
     if (timer0_ovf_count == (TIMER_0_NB_OVERFLOW_50_MS - 1))
     {
@@ -50,7 +50,7 @@ void init_timer()
     timer1_set_prescaler_1();
 
     timer0_set_prescaler_1024();
-    timer0_set_ovf_trigger_isr();
+    timer0_set_ovf_trigger_SIGNAL();
 
     interrupt_global_enable();
 }

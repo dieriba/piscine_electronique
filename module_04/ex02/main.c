@@ -1,5 +1,6 @@
 #include "interrupt.h"
 #include "port.h"
+
 #include <avr/interrupt.h>
 #include <avr/io.h>
 #include <stdint.h>
@@ -44,17 +45,17 @@ void init_interrupt()
     interrupt_global_enable();
 }
 
-ISR(TIMER1_COMPA_vect)
+SIGNAL(TIMER1_COMPA_vect)
 {
     pb0_toggle();
 }
 
-ISR(INT0_vect)
+SIGNAL(INT0_vect)
 {
     repr_value_from_led_d1_d2_d3_d4(++value);
 }
 
-ISR(PCINT2_vect)
+SIGNAL(PCINT2_vect)
 {
     uint8_t current_state = pd4_read();
 

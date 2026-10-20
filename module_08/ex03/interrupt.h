@@ -6,7 +6,7 @@
 
 static inline void interrupt_global_enable(void)
 {
-    sei();
+    __asm__ __volatile__("sei" ::: "memory");
 }
 
 static inline void interrupt_global_disable(void)

@@ -81,7 +81,7 @@ void init_led()
     pb4_output();
 }
 
-ISR(ADC_vect)
+SIGNAL(ADC_vect)
 {
     uint8_t rv1 = ADCH;
     wheel(rv1);

@@ -3,7 +3,7 @@
 
 #include <avr/io.h>
 
-ISR(INT0_vect)
+SIGNAL(INT0_vect)
 {
     pb0_toggle();
 }

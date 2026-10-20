@@ -46,7 +46,7 @@ void uart_init_tx_rx(unsigned int ubrr, unsigned int tx_rx)
     if (tx_rx & RECEIVER)
         UCSR0B |= (1 << RXCIE0);
 
-    sei();
+    __asm__ __volatile__("sei" ::: "memory");
 }
 
 /*
@@ -106,7 +106,7 @@ void uart_tx_send_str_with_nl(char *s)
  * UDR0   : writing loads the next byte for transmission.
  * UCSR0B : UDRIE0 = 0 disables interrupt when TX buffer is empty.
  */
-ISR(USART_UDRE_vect)
+SIGNAL(USART_UDRE_vect)
 {
     if (tx_buffer_head != tx_buffer_tail)
     {
@@ -127,7 +127,7 @@ ISR(USART_UDRE_vect)
  * UDR0 : reading retrieves the received byte.
  *        Store byte in RX buffer if space is available.
  */
-ISR(USART_RX_vect)
+SIGNAL(USART_RX_vect)
 {
     char    c    = UDR0;
     uint8_t next = pow2_mod(rx_buffer_head + 1, RX_BUFF_SIZE);

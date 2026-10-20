@@ -77,12 +77,12 @@ TIMER_GEN_SET_PRESCALER_ROUTINE(2, 1024, 7)
         TCCR##TIMER##A = (TCCR##TIMER##A & ~(1 << COM##TIMER##B0)) | (1 << COM##TIMER##B1);                                                                                                            \
     }                                                                                                                                                                                                  \
     /* TIMSKn TOIEn = 1: enable overflow interrupt. */                                                                                                                                                 \
-    static inline void timer##TIMER##_set_ovf_trigger_isr(void)                                                                                                                                        \
+    static inline void timer##TIMER##_set_ovf_trigger_SIGNAL(void)                                                                                                                                     \
     {                                                                                                                                                                                                  \
         TIMSK##TIMER |= (1 << TOIE##TIMER);                                                                                                                                                            \
     }                                                                                                                                                                                                  \
     /* TIMSKn TOIEn = 0: disable overflow interrupt. */                                                                                                                                                \
-    static inline void timer##TIMER##_unset_ovf_trigger_isr(void)                                                                                                                                      \
+    static inline void timer##TIMER##_unset_ovf_trigger_SIGNAL(void)                                                                                                                                   \
     {                                                                                                                                                                                                  \
         TIMSK##TIMER &= ~(1 << TOIE##TIMER);                                                                                                                                                           \
     }
