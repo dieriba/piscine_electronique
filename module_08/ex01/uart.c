@@ -109,7 +109,5 @@ uint8_t uart_rx_blocking_get_byte()
 {
     while (uart_rx_buffer_is_empty())
         ;
-    uint8_t c      = rx_buffer[rx_buffer_tail];
-    rx_buffer_tail = pow2_mod(rx_buffer_tail + 1, RX_BUFF_SIZE);
-    return c;
+    return uart_rx_get_byte();
 }

@@ -2,7 +2,6 @@
 #include "interrupt.h"
 #include "port.h"
 #include "timer.h"
-#include "uart.h"
 
 #include <avr/io.h>
 #include <stdint.h>
@@ -119,7 +118,6 @@ int main()
     init_led();
     init_rgb();
     interrupt_global_enable();
-    uart_init_tx_rx(SENDER);
 
     while (1)
     {

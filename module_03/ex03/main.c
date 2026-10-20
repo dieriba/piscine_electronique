@@ -51,20 +51,13 @@ void init_gpio()
     pd6_output();
 }
 
-char uart_rx()
-{
-    while (uart_rx_buffer_is_empty())
-        ;
-    uint8_t byte = uart_rx_get_byte();
-    return byte;
-}
 
 uint8_t getline_and_send(char *buffer, uint16_t max_len)
 {
     uint8_t i = 0;
     while (1)
     {
-        char c = uart_rx();
+        char c = uart_rx_blocking_get_byte();
         if ((c != '\r' && c != BACKSPACE) && i >= max_len)
         {
             while (i > 0)
