@@ -16,10 +16,7 @@ void uart_tx(uint8_t byte)
 
 char uart_rx()
 {
-    while (uart_rx_buffer_is_empty())
-        ;
-    uint8_t byte = uart_rx_get_byte();
-    return byte;
+    return uart_rx_blocking_get_byte();
 }
 
 int main()

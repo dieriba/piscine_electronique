@@ -8,12 +8,17 @@
 
 void uart_tx()
 {
-    uart_send_byte('Z');
+    uart_tx_send_byte('Z');
+}
+
+void uart_init()
+{
+    uart_init_tx_rx(UBRR_VAL + 1, SENDER);
 }
 
 int main()
 {
-    uart_init_tx_rx(UBRR_VAL + 1, SENDER);
+    uart_init();
     while (1)
     {
         uart_tx();

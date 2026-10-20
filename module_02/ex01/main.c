@@ -8,14 +8,14 @@
 
 #define UART_BAUDRATE 115200UL
 #define UBRR_VAL ((F_CPU / (16UL * UART_BAUDRATE)) - 1)
-#define MSG "Hello World!\r\n"
+#define MSG "Hello World!"
 #define PRESCALER 1024UL
 #define TIMER_FREQ (16000000UL / PRESCALER)
 #define VALUE_TO_COMPARE (TIMER_FREQ * 2)
 
 void uart_printstr()
 {
-    uart_send_str(MSG);
+    uart_tx_send_str_with_nl(MSG);
 }
 
 ISR(TIMER1_COMPA_vect)
@@ -23,17 +23,17 @@ ISR(TIMER1_COMPA_vect)
     uart_printstr();
 }
 
-void init()
+void init_timer()
 {
     timer1_set_mode_ctc();
     timer1_set_prescaler_1024();
     timer1_interrupt_on_match_a(VALUE_TO_COMPARE);
-    sei();
+    sei(); /*ENABLE GLOBAL INTERRUPT*/
 }
 
 int main()
 {
-    init();
+    init_timer();
     uart_init_tx_rx(UBRR_VAL + 1, SENDER);
     while (1)
     {

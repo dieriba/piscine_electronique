@@ -1,11 +1,10 @@
-
 #include "port.h"
 #include "uart.h"
+#include "utils.h"
 
 #include <avr/interrupt.h>
 #include <avr/io.h>
 #include <stdint.h>
-#include <string.h>
 #include <util/delay.h>
 
 #define UART_BAUDRATE 9600
@@ -100,7 +99,7 @@ void led_reset()
 
 void led_dramatic_effect()
 {
-    for (uint8_t i = 0; i < 20; i++)
+    for (uint8_t i = 0; i < 10; i++)
     {
         pb0_toggle();
         pb1_toggle();
@@ -127,18 +126,17 @@ int main()
     while (1)
     {
         char user_input[MAX_LEN_USER_INPUT] = {0};
-        uart_init_tx_rx(UBRR_VAL + 1, SENDER | RECEIVER);
+        uart_init_tx_rx(UBRR_VAL, SENDER | RECEIVER);
         uart_tx_send_str("Enter your login:\r\n");
         uart_tx_send_str("\tusername: ");
-        uint8_t len_input      = getline_and_send(user_input, MAX_LEN_USER_INPUT, char_self);
-        uint8_t valid_username = (len_input == sizeof(USERNAME) - 1) && memcmp(USERNAME, user_input, len_input) == 0;
+        getline_and_send(user_input, MAX_LEN_USER_INPUT, char_self);
+        uint8_t valid_username = cmp_str(USERNAME, user_input) == 0;
         uart_tx_send_str("\tpassword: ");
-        len_input              = getline_and_send(user_input, MAX_LEN_USER_INPUT, char_hide);
-        uint8_t valid_paswword = (len_input == sizeof(PASSWORD) - 1) && memcmp(PASSWORD, user_input, len_input) == 0;
+        getline_and_send(user_input, MAX_LEN_USER_INPUT, char_hide);
+        uint8_t valid_paswword = cmp_str(PASSWORD, user_input) == 0;
 
         if (valid_username && valid_paswword)
         {
-            led_reset();
             uart_tx_send_str(MSG_WELCOME USERNAME "!\r\n");
             uart_tx_send_str("Shall we play a game?\r\n");
             led_toggle();
@@ -147,7 +145,7 @@ int main()
         {
             uart_tx_send_str(ERROR_MSG_BAD_USERNAME);
             led_dramatic_effect();
-            led_reset();
-        }    
+        }
+        led_reset();
     }
 }

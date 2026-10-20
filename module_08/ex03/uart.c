@@ -6,8 +6,6 @@
 #define POW 8
 #define TX_BUFF_SIZE (1 << POW)
 #define RX_BUFF_SIZE (1 << POW)
-#define UART_BAUDRATE 9600
-#define UBRR_VAL ((F_CPU / (16UL * UART_BAUDRATE)) - 1)
 
 #define pow2_mod(num, pow) ((num) & (pow - 1))
 
@@ -19,12 +17,11 @@ char             rx_buffer[TX_BUFF_SIZE];
 volatile uint8_t rx_buffer_head;
 volatile uint8_t rx_buffer_tail;
 
-void uart_init_tx_rx(unsigned int tx_rx)
+void uart_init_tx_rx(unsigned int ubrr, unsigned int tx_rx)
 {
     /*Set baud rate */
-    unsigned int ubrr = UBRR_VAL;
-    UBRR0H            = (unsigned char) (ubrr >> 8);
-    UBRR0L            = (unsigned char) ubrr;
+    UBRR0H = (unsigned char) (ubrr >> 8);
+    UBRR0L = (unsigned char) ubrr;
 
     /* Set frame format: 8 data, 1 stop bit */
     UCSR0C = (3 << UCSZ00);

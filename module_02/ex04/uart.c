@@ -57,6 +57,12 @@ void uart_tx_send_str(char *s)
     }
 }
 
+void uart_tx_send_str_with_nl(char *s)
+{
+    uart_tx_send_str(s);
+    uart_tx_send_str("\r\n");
+}
+
 ISR(USART_UDRE_vect)
 {
     if (tx_buffer_head != tx_buffer_tail)
@@ -81,6 +87,11 @@ ISR(USART_RX_vect)
     }
 }
 
+uint8_t uart_rx_buffer_is_empty()
+{
+    return rx_buffer_head == rx_buffer_tail;
+}
+
 uint8_t uart_rx_get_byte()
 {
     if (rx_buffer_head == rx_buffer_tail)
@@ -90,7 +101,9 @@ uint8_t uart_rx_get_byte()
     return c;
 }
 
-uint8_t uart_rx_buffer_is_empty()
+uint8_t uart_rx_blocking_get_byte()
 {
-    return rx_buffer_head == rx_buffer_tail;
+    while (uart_rx_buffer_is_empty())
+        ;
+    return uart_rx_get_byte();
 }
