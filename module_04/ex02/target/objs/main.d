@@ -1,7 +1,5 @@
-target/objs/./main.o: main.c interrupt.h port.h timer.h
+target/objs/./main.o: main.c interrupt.h port.h
 
 interrupt.h:
 
 port.h:
-
-timer.h:

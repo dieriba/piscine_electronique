@@ -42,16 +42,15 @@ void init_gpio()
 
 void init_timer()
 {
-    timer1_set_pwm_non_inverting_oc1a();
-    timer1_set_mode_fast_pwm_top_icr();
+    timer1_set_compare_output_mode_fast_pwm_set_at_bottom_clear_on_match_oc1a();
     uint16_t top = COMPUTE_TOP_PWN_FROM_DESIRED_FREQ(F_CPU, TIMER1_PRESCALER, TIMER1_PWN_DESIRED_FREQ);
-    timer1_set_compare_icr(top);
+    timer1_set_mode_fast_pwm_top_icr(top);
     timer1_set_compare_a(0);
     timer1_set_prescaler_1();
 
+    timer0_set_mode_normal();
+    timer0_set_interrupt_on_overflow();
     timer0_set_prescaler_1024();
-    timer0_set_ovf_trigger_SIGNAL();
-
     interrupt_global_enable();
 }
 

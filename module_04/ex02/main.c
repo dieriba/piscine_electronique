@@ -4,12 +4,15 @@
 #include <avr/interrupt.h>
 #include <avr/io.h>
 #include <stdint.h>
+#include <util/delay.h>
 
 #define pow2(pow) (1 << (pow))
 #define pow2_mod(numerator, modulus) ((numerator) & ((modulus) - 1))
 #define POW pow2(4)
 #define MASK_PB4_STATE (0b1000)
+#define DEBOUNCE_TIME 10
 
+uint8_t button1_rising;
 uint8_t value;
 uint8_t mask_clear_prev_val;
 uint8_t prev_state_dec_button;
@@ -52,7 +55,18 @@ SIGNAL(TIMER1_COMPA_vect)
 
 SIGNAL(INT0_vect)
 {
-    repr_value_from_led_d1_d2_d3_d4(++value);
+    _delay_ms(DEBOUNCE_TIME);
+    if (button1_rising == 0)
+    {
+        interrupt_int0_set_rising_edge();
+        button1_rising = 1;
+        repr_value_from_led_d1_d2_d3_d4(++value);
+        EIFR = (1 << INTF0);
+        return;
+    }
+    button1_rising = 0;
+    interrupt_int0_set_falling_edge();
+    EIFR = (1 << INTF0);
 }
 
 SIGNAL(PCINT2_vect)
