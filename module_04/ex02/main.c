@@ -13,15 +13,16 @@
 #define DEBOUNCE_TIME 10
 
 uint8_t button1_rising;
+uint8_t button2_rising;
 uint8_t value;
 uint8_t mask_clear_prev_val;
-uint8_t prev_state_dec_button;
+uint8_t button2_previous_state;
 
 void init_gpio()
 {
     pd2_pull_up_enable();
     pd4_pull_up_enable();
-    prev_state_dec_button = pd4_read();
+    button2_previous_state = pd4_read();
     pb0_output();
     pb1_output();
     pb2_output();
@@ -61,7 +62,7 @@ SIGNAL(INT0_vect)
         interrupt_int0_set_rising_edge();
         button1_rising = 1;
         repr_value_from_led_d1_d2_d3_d4(++value);
-        EIFR = (1 << INTF0);
+        EIFR = (1 << INTF0); // Clear the flag to ensure that any interrupt happened in the meantime will be discarded
         return;
     }
     button1_rising = 0;
@@ -72,14 +73,13 @@ SIGNAL(INT0_vect)
 SIGNAL(PCINT2_vect)
 {
     uint8_t current_state = pd4_read();
-
-    if (current_state != prev_state_dec_button)
+    _delay_ms(DEBOUNCE_TIME);
+    uint8_t new_state = pd4_read();
+    if (button2_previous_state != new_state && current_state == new_state)
     {
-        prev_state_dec_button = current_state;
+        button2_previous_state = current_state;
         if (current_state == 0)
-        {
             repr_value_from_led_d1_d2_d3_d4(--value);
-        }
     }
 }
 
