@@ -13,7 +13,6 @@
 #define DEBOUNCE_TIME 10
 
 uint8_t button1_rising;
-uint8_t button2_rising;
 uint8_t value;
 uint8_t mask_clear_prev_val;
 uint8_t button2_previous_state;
