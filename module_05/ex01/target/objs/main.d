@@ -1,7 +1,4 @@
-target/objs/./main.o: main.c adc.h hex.h uart.h
-
+target/objs/./main.o: main.c adc.h utils.h uart.h
 adc.h:
-
-hex.h:
-
+utils.h:
 uart.h:

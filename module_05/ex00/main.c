@@ -1,5 +1,5 @@
 #include "adc.h"
-#include "hex.h"
+#include "utils.h"
 #include "uart.h"
 
 #include <stdint.h>
