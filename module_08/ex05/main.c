@@ -4,6 +4,7 @@
 #include "spi.h"
 #include "timer.h"
 
+#include <stddef.h>
 #include <stdint.h>
 #include <util/delay.h>
 
@@ -15,6 +16,7 @@
 #define MS 0.064
 #define TARGET_WAIT_TIME_MS 20
 #define B ((TARGET_WAIT_TIME_MS / MS) + 1)
+#define DEBOUNCE_TIME 10
 
 typedef struct
 {
@@ -32,6 +34,10 @@ typedef struct __attribute__((packed))
 } apa102_led;
 
 uint8_t color_value;
+uint8_t button1_rising;
+uint8_t button2_previous_state;
+uint8_t led;
+uint8_t curr_rgb_channel;
 
 static apa102_led leds[APA102_LED_COUNT];
 
@@ -80,9 +86,7 @@ void apa102_update_led_colors(uint8_t index, const rgb_color *color)
 
 void init_gpio()
 {
-    pd2_input();
     pd2_pull_up_enable();
-    pd4_input();
     pd4_pull_up_enable();
 }
 
@@ -107,16 +111,60 @@ void init_timer1()
 SIGNAL(ADC_vect)
 {
     color_value = ADCH;
+    TIFR1       = (1 << OCF1B); // CLEAR OUTPUT COMPARE FLAG B
+}
 
-    TIFR1 = (1 << OCF1B); // CLEAR OUTPUT COMPARE FLAG B
+SIGNAL(INT0_vect)
+{
+    _delay_ms(DEBOUNCE_TIME);
+    if (button1_rising == 0)
+    {
+        interrupt_int0_set_rising_edge();
+        button1_rising                                                                               = 1;
+        apa102_led *ld                                                                               = &leds[led];
+        *(uint8_t *) ((char *) ld + offsetof(apa102_led, blue) + sizeof(uint8_t) * curr_rgb_channel) = color_value;
+        curr_rgb_channel                                                                             = (curr_rgb_channel + 1) % APA102_LED_COUNT;
+        apa102_display();
+        EIFR = (1 << INTF0);
+        return;
+    }
+    button1_rising = 0;
+    interrupt_int0_set_falling_edge();
+    EIFR = (1 << INTF0);
+}
+
+SIGNAL(PCINT2_vect)
+{
+    uint8_t current_state = pd4_read();
+    _delay_ms(DEBOUNCE_TIME);
+    uint8_t new_state = pd4_read();
+    if (button2_previous_state != new_state && current_state == new_state)
+    {
+        button2_previous_state = current_state;
+        if (current_state == 0)
+        {
+            led = (led + 1) % APA102_LED_COUNT;
+        }
+    }
+}
+
+void init_interrupt()
+{
+    interrupt_int0_set_falling_edge();
+    interrupt_int0_enable();
+
+    interrupt_pcint_group2_enable();
+    interrupt_pd4_enable();
+    interrupt_global_enable();
 }
 
 int main()
 {
+    apa102_init(0x10);
     init_spi();
     init_gpio();
     adc_init();
-    apa102_init(0x10);
+    init_interrupt();
     interrupt_global_enable();
     while (1)
     {
