@@ -1,5 +1,4 @@
 #include "uart.h"
-
 #include <avr/interrupt.h>
 #include <avr/io.h>
 #include <stdint.h>
@@ -59,6 +58,12 @@ void uart_tx_send_str(char *s)
     {
         uart_tx_send_byte(s[i]);
     }
+}
+
+void uart_tx_send_str_with_nl(char *s)
+{
+    uart_tx_send_str(s);
+    uart_tx_send_str("\r\n");
 }
 
 SIGNAL(USART_UDRE_vect)

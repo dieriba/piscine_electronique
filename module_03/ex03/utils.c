@@ -1,5 +1,7 @@
 #include "utils.h"
 #include <stdint.h>
+#define HEX_UPPERCASE "0123456789abcdef"
+
 
 uint8_t cmp_str(const char *s1, const char *s2)
 {
@@ -29,9 +31,9 @@ static uint8_t get_digit_pos_in_hex_base(char digit)
     if (digit >= '0' && digit <= '9')
         return digit - '0';
     else if (digit >= 'a' && digit <= 'f')
-        return digit - 'a';
+        return 10 + (digit - 'a');
     else if (digit >= 'A' && digit <= 'F')
-        return digit - 'A';
+        return 10 + (digit - 'A');
 
     return -1;
 }
@@ -70,4 +72,23 @@ uint32_t dec_str_to_unsigned(const char *num, const char **end)
     }
     *end = num + i;
     return result;
+}
+
+
+void hex_read(char *buffer, uint8_t hex)
+{
+    char low_nibble  = HEX_UPPERCASE[hex & 0x0f];
+    char high_nibble = HEX_UPPERCASE[hex >> 4];
+
+    buffer[0] = high_nibble;
+    buffer[1] = low_nibble;
+}
+
+void hex_read_dword(char *buffer, uint32_t hex)
+{
+    for (int8_t i = sizeof(uint32_t) - 1; i >= 0; i--)
+    {
+        hex_read(buffer + (i * 2), hex & 0xFF);
+        hex >>= 8;
+    }
 }
