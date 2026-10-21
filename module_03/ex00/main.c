@@ -26,11 +26,18 @@ void init_rgb()
 {
     timer0_set_prescaler_1();
     timer2_set_prescaler_1();
-    timer0_set_mode_fast_pwm_top_ff();
-    timer2_set_mode_fast_pwm_top_ff();
-    timer0_pwm_enable_a();
-    timer0_pwm_enable_b();
-    timer2_pwm_enable_b();
+    timer0_set_mode_phase_correct_pwm_top_ff();
+    timer2_set_mode_phase_correct_pwm_top_ff();
+    timer0_set_compare_output_mode_phase_correct_pwm_clear_on_upcount_set_on_downcount_oc0a();
+    timer0_set_compare_output_mode_phase_correct_pwm_clear_on_upcount_set_on_downcount_oc0b();
+    timer2_set_compare_output_mode_phase_correct_pwm_clear_on_upcount_set_on_downcount_oc2b();
+}
+
+void set_rgb(uint8_t red, uint8_t green, uint8_t blue)
+{
+    timer0_set_compare_b(red);
+    timer0_set_compare_a(green);
+    timer2_set_compare_b(blue);
 }
 
 void init_gpio()
@@ -40,13 +47,6 @@ void init_gpio()
     pd6_output();
 }
 
-void set_rgb(uint8_t red, uint8_t green, uint8_t blue)
-{
-    timer0_set_reg_b(red);
-    timer0_set_reg_a(green);
-    timer2_set_reg_b(blue);
-}
-
 int main()
 {
     init_gpio();
@@ -54,9 +54,8 @@ int main()
     uint8_t i = 0;
     while (1)
     {
-        i = i % RGB_CHANNELS;
         set_rgb(rgb_channels[i].red, rgb_channels[i].green, rgb_channels[i].blue);
-        i++;
         _delay_ms(WAIT_TIME_MS);
+        i = (i + 1) % RGB_CHANNELS;
     }
 }

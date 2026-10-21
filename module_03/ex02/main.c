@@ -11,18 +11,18 @@ void init_rgb()
 {
     timer0_set_prescaler_1();
     timer2_set_prescaler_1();
-    timer0_set_mode_fast_pwm_top_ff();
-    timer2_set_mode_fast_pwm_top_ff();
-    timer0_pwm_enable_a();
-    timer0_pwm_enable_b();
-    timer2_pwm_enable_b();
+    timer0_set_mode_phase_correct_pwm_top_ff();
+    timer2_set_mode_phase_correct_pwm_top_ff();
+    timer0_set_compare_output_mode_phase_correct_pwm_clear_on_upcount_set_on_downcount_oc0a();
+    timer0_set_compare_output_mode_phase_correct_pwm_clear_on_upcount_set_on_downcount_oc0b();
+    timer2_set_compare_output_mode_phase_correct_pwm_clear_on_upcount_set_on_downcount_oc2b();
 }
 
-void set_rgb(uint8_t r, uint8_t g, uint8_t b)
+void set_rgb(uint8_t red, uint8_t green, uint8_t blue)
 {
-    timer0_set_reg_b(r);
-    timer0_set_reg_a(g);
-    timer2_set_reg_b(b);
+    timer0_set_compare_b(red);
+    timer0_set_compare_a(green);
+    timer2_set_compare_b(blue);
 }
 
 void wheel(uint8_t pos)

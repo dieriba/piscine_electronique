@@ -30,18 +30,18 @@ void init_rgb()
 {
     timer0_set_prescaler_1();
     timer2_set_prescaler_1();
-    timer0_set_mode_fast_pwm_top_ff();
-    timer2_set_mode_fast_pwm_top_ff();
-    timer0_pwm_enable_a();
-    timer0_pwm_enable_b();
-    timer2_pwm_enable_b();
+    timer0_set_mode_phase_correct_pwm_top_ff();
+    timer2_set_mode_phase_correct_pwm_top_ff();
+    timer0_set_compare_output_mode_phase_correct_pwm_clear_on_upcount_set_on_downcount_oc0a();
+    timer0_set_compare_output_mode_phase_correct_pwm_clear_on_upcount_set_on_downcount_oc0b();
+    timer2_set_compare_output_mode_phase_correct_pwm_clear_on_upcount_set_on_downcount_oc2b();
 }
 
 void set_rgb(uint8_t red, uint8_t green, uint8_t blue)
 {
-    timer0_set_reg_b(red);
-    timer0_set_reg_a(green);
-    timer2_set_reg_b(blue);
+    timer0_set_compare_b(red);
+    timer0_set_compare_a(green);
+    timer2_set_compare_b(blue);
 }
 
 void init_gpio()
@@ -51,10 +51,9 @@ void init_gpio()
     pd6_output();
 }
 
-
-uint8_t getline_and_send(char *buffer, uint16_t max_len)
+uint16_t getline_and_send(char *buffer, uint16_t max_len)
 {
-    uint8_t i = 0;
+    uint16_t i = 0;
     while (1)
     {
         char c = uart_rx_blocking_get_byte();
@@ -93,8 +92,8 @@ uint8_t parse_rgb(rgb_color *rgb, char *buffer, uint8_t len_input)
 {
     if (len_input != (sizeof(FORMAT_MSG) - 1) || (buffer[0] != FORMAT_MSG[0]))
         return 0;
-    const char    *end_ptr;
-    uint32_t value = hex_str_to_unsigned(buffer + 1, &end_ptr);
+    const char *end_ptr;
+    uint32_t    value = hex_str_to_unsigned(buffer + 1, &end_ptr);
 
     if (*end_ptr != 0)
         return 0;
