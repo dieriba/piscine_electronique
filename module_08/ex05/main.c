@@ -3,6 +3,7 @@
 #include "port.h"
 #include "spi.h"
 #include "timer.h"
+#include "utils.h"
 
 #include <stddef.h>
 #include <stdint.h>
@@ -88,6 +89,7 @@ void init_gpio()
 {
     pd2_pull_up_enable();
     pd4_pull_up_enable();
+    button2_previous_state = pd4_read();
 }
 
 void adc_init()
@@ -95,9 +97,6 @@ void adc_init()
     adc_enable();
     adc_voltage_set_avcc();
     adc_prescaler_set_128();
-    adc_enable_interrupt();
-    adc_enable_auto_trigger_src_timer1_compare_b();
-    adc_read_set_adc0_8_bits();
 }
 
 void init_timer1()
@@ -106,12 +105,6 @@ void init_timer1()
     timer1_set_compare_a(B);
     timer1_set_mode_ctc();
     timer1_set_prescaler_1024();
-}
-
-SIGNAL(ADC_vect)
-{
-    color_value = ADCH;
-    TIFR1       = (1 << OCF1B); // CLEAR OUTPUT COMPARE FLAG B
 }
 
 SIGNAL(INT0_vect)
@@ -142,9 +135,7 @@ SIGNAL(PCINT2_vect)
     {
         button2_previous_state = current_state;
         if (current_state == 0)
-        {
             led = (led + 1) % APA102_LED_COUNT;
-        }
     }
 }
 
@@ -152,21 +143,26 @@ void init_interrupt()
 {
     interrupt_int0_set_falling_edge();
     interrupt_int0_enable();
-
     interrupt_pcint_group2_enable();
     interrupt_pd4_enable();
     interrupt_global_enable();
 }
 
-int main()
+void setup()
 {
     apa102_init(0x10);
     init_spi();
     init_gpio();
     adc_init();
     init_interrupt();
-    interrupt_global_enable();
+}
+
+int main()
+{
+    setup();
     while (1)
     {
+        color_value = adc_read_adc0_8_bits();
+        _delay_ms(20);
     }
 }
