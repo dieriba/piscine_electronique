@@ -4,7 +4,6 @@
 #include <math.h>
 
 #include <stdint.h>
-#include <stdlib.h>
 #include <util/delay.h>
 
 #define AHT20_ADDR 0x38

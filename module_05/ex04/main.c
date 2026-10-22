@@ -33,25 +33,27 @@ void adc_init()
 
 void init_rgb()
 {
+    timer0_set_prescaler_1();
+    timer2_set_prescaler_1();
+    timer0_set_mode_phase_correct_pwm_top_ff();
+    timer2_set_mode_phase_correct_pwm_top_ff();
+    timer0_set_compare_output_mode_phase_correct_pwm_clear_on_upcount_set_on_downcount_oc0a();
+    timer0_set_compare_output_mode_phase_correct_pwm_clear_on_upcount_set_on_downcount_oc0b();
+    timer2_set_compare_output_mode_phase_correct_pwm_clear_on_upcount_set_on_downcount_oc2b();
+}
 
+void init_gpio()
+{
     pd3_output();
     pd5_output();
     pd6_output();
-
-    timer0_set_prescaler_1();
-    timer2_set_prescaler_1();
-    timer0_set_mode_fast_pwm_top_ff();
-    timer2_set_mode_fast_pwm_top_ff();
-    timer0_pwm_enable_a();
-    timer0_pwm_enable_b();
-    timer2_pwm_enable_b();
 }
 
 void set_rgb(uint8_t r, uint8_t g, uint8_t b)
 {
-    timer0_set_reg_b(r);
-    timer0_set_reg_a(g);
-    timer2_set_reg_b(b);
+    timer0_set_compare_b(r);
+    timer0_set_compare_a(g);
+    timer2_set_compare_b(b);
 }
 
 void wheel(uint8_t pos)
@@ -114,8 +116,9 @@ void init_timer1()
 int main()
 {
     adc_init();
-    init_timer1();
     init_led();
+    init_gpio();
+    init_timer1();
     init_rgb();
     interrupt_global_enable();
 
