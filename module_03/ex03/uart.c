@@ -5,7 +5,7 @@
 #define POW 8
 #define TX_BUFF_SIZE (1 << POW)
 #define RX_BUFF_SIZE (1 << POW)
-#define UART_BAUDRATE 9600
+#define UART_BAUDRATE 115200
 #define UBRR_VAL ((F_CPU / (16UL * UART_BAUDRATE)) - 1)
 
 #define pow2_mod(num, pow) ((num) & (pow - 1))

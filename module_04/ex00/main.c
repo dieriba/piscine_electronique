@@ -3,7 +3,7 @@
 
 #include <avr/io.h>
 #include <util/delay.h>
-#define UART_BAUDRATE 9600
+#define UART_BAUDRATE 115200
 #define UBRR_VAL ((F_CPU / (16UL * UART_BAUDRATE)) - 1)
 #define DEBOUNCE_TIME 10
 uint8_t rising;

@@ -6,6 +6,8 @@
 #include <util/delay.h>
 #define WAIT_TIME_MS 20
 #define BUFFER_SIZE 4
+#define CALIBRATION_POINT 25
+#define ADC_RAW_VALUE 380
 
 void adc_init()
 {
@@ -22,9 +24,11 @@ int main()
 
     while (1)
     {
-        uint16_t raw_temp = adc_read_temperature();
-        int32_t  celsius  = (((int32_t) raw_temp * 1100 / 1024) - 314) * 100 / 122 + 25;
-        itoa(buffer, celsius);
+        int16_t raw_temp = adc_read_temperature();
+
+        int16_t celsius = (((int16_t)raw_temp - ADC_RAW_VALUE) * 4) / 5 + 25; 
+		//https://github.com/dm-cdb/Arduino/tree/main/sensor_internal
+        signed_number_to_str(buffer, celsius);
         uart_tx_send_str(buffer);
         uart_tx_send_str("\r\n");
         _delay_ms(WAIT_TIME_MS);

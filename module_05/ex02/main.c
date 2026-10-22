@@ -8,6 +8,7 @@
 #define SUFFIX ", "
 #define BUFFER_SIZE ((NB_TO_DISPLAY * 4) + ((NB_TO_DISPLAY - 1) * (sizeof(SUFFIX) - 1)))
 
+
 void adc_init()
 {
     adc_enable();
@@ -20,7 +21,7 @@ void buffer_update(char *buffer, uint16_t *value)
     uint8_t offset = 0;
     for (uint8_t i = 0; i < NB_TO_DISPLAY; i++)
     {
-        uint8_t len = itoa(buffer + offset, value[i]);
+        uint8_t len = unsigned_number_to_str(buffer + offset, value[i]);
         offset += len;
         if (i != (NB_TO_DISPLAY - 1))
         {

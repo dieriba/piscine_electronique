@@ -1,7 +1,7 @@
 #include "utils.h"
 #include <stdint.h>
 #define HEX_UPPERCASE "0123456789abcdef"
-
+#define INT_MIN_STR "-2147483648"
 
 uint8_t cmp_str(const char *s1, const char *s2)
 {
@@ -92,3 +92,75 @@ void hex_read_byte_dword(char *buffer, uint32_t hex)
         hex >>= 8;
     }
 }
+
+static int8_t number_count_digits(uint32_t nb)
+{
+    uint8_t i = (nb == 0);
+
+    while (nb > 0)
+    {
+        nb /= 10;
+        i++;
+    }
+    return i;
+}
+
+
+uint8_t    unsigned_number_to_str(char *buffer, uint32_t number)
+{
+    int8_t nb_digits = number_count_digits(number);
+
+    buffer[nb_digits] = 0;
+    int8_t i = nb_digits - 1;
+    while (i >= 0)
+    {
+        buffer[i] = (number % 10) + '0';
+        number /= 10;
+        i--;
+    }
+
+    return nb_digits;
+}
+
+
+void mem_copy(void *dst, const void* src, uint16_t size)
+{
+    char *dest = dst;
+    const char* source = dst;
+    for (uint16_t i = 0; i < size; i++)
+    {
+        dest[i] = source[i];
+    }
+}
+
+uint8_t    signed_number_to_str(char *buffer, int32_t number)
+{
+    if (number == INT32_MIN)
+    {
+        mem_copy(buffer, INT_MIN_STR, sizeof(INT_MIN_STR));
+        return sizeof(INT_MIN_STR) - 1;
+    }
+
+    int8_t sign = number < 0 ? -1 : 1;
+    int8_t nb_digits = number_count_digits(number * sign) + (sign < 0);
+    int8_t stop;
+    if (sign < 0)
+    {
+        number *= -1;
+        buffer[0] = '-';
+        stop = 1;
+    }
+    else
+        stop = 0;
+    buffer[nb_digits] = 0;
+    int8_t i = nb_digits - 1;
+    while (i >= stop)
+    {
+        buffer[i] = (number % 10) + '0';
+        number /= 10;
+        i--;
+    }
+
+    return nb_digits;
+}
+
