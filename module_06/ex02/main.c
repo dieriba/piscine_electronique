@@ -2,7 +2,7 @@
 #include "uart.h"
 #include "utils.h"
 #include <math.h>
-
+#include <stdlib.h>
 #include <stdint.h>
 #include <util/delay.h>
 
@@ -14,7 +14,7 @@
 #define WAIT_TIME_POLL_STATUS 50
 #define WAIT_TIME_MEASURE 2000
 #define LEN_ARR(arr) (sizeof(arr) / sizeof(*arr))
-
+#define COUNT 3.0
 #define AHT20_MASK_CALIBRATION 0x08
 #define AHT20_MASK_BUSY 0x80
 #define AHT20_MEASURE_LEN 7
@@ -85,12 +85,12 @@ void print_temperature_and_humidity(float temperature, float humidity)
     char buffer_temperature[FLOAT_MAX_WIDTH + 1];
     char buffer_humidity[FLOAT_MAX_WIDTH + 1];
 
-    dtostrf(temperature, 0, 1, buffer_temperature);
-    dtostrf(humidity, 0, 1, buffer_humidity);
+    dtostrf(temperature, 0, 2, buffer_temperature);
+    dtostrf(humidity, 0, 3, buffer_humidity);
 
     uart_tx_send_str("Temperature: ");
     uart_tx_send_str(buffer_temperature);
-    uart_tx_send_str(".C, ");
+    uart_tx_send_str("C, ");
     uart_tx_send_str("Humidity: ");
     uart_tx_send_str(buffer_humidity);
     uart_tx_send_byte('%');
@@ -168,9 +168,19 @@ int main()
     AHT20_init();
     while (1)
     {
+        float average_temperature = 0, average_humidity = 0;
         float temperature, humidity;
-        AHT20_measure(&temperature, &humidity);
-        print_temperature_and_humidity(temperature, humidity);
+    
+        for (uint8_t i = 0; i < COUNT; i++)
+        {
+            AHT20_measure(&temperature, &humidity);
+            average_temperature += temperature;
+            average_humidity += humidity;
+        }
+
+        average_temperature = average_temperature / COUNT;
+        average_humidity = average_humidity / COUNT;
+        print_temperature_and_humidity(average_temperature, average_humidity);
         _delay_ms(WAIT_TIME_MEASURE);
     }
     i2c_stop();

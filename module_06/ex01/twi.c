@@ -1,11 +1,9 @@
 #include "twi.h"
-
-#include "utils.h"
-
 #include <avr/io.h>
 #include <stdint.h>
 
 #ifdef DEBUG
+#include "utils.h"
 #include "uart.h"
 #endif
 

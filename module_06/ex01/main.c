@@ -52,10 +52,6 @@ void i2c_write_all_to(uint8_t addr, uint8_t *data, uint8_t len)
     }
 }
 
-void i2c_read(void)
-{
-}
-
 void print_hex_value(char c)
 {
     char hex_buffer[3] = {0};
@@ -79,7 +75,7 @@ void print_measure()
     uart_tx_send_str("\r\n");
 }
 
-void AHT20_init(void)
+void aht20_init(void)
 {
     _delay_ms(AHT20_WAIT_TIME_MS_POWER_BOOT);
     uint8_t cmd = AHT20_COMMAND_GET_STATUS;
@@ -105,7 +101,7 @@ void i2c_stop(void)
     twi_stop();
 }
 
-void AHT20_measure(void)
+void aht20_measure(void)
 {
     uint8_t measure_command[] = {AHT20_COMMAND_MEASURE, 0x33, 0x00};
     i2c_write_all_to(AHT20_ADDR, measure_command, LEN_ARR(measure_command));
@@ -127,10 +123,10 @@ int main()
 {
     uart_init_tx_rx(SENDER);
     i2c_init();
-    AHT20_init();
+    aht20_init();
     while (1)
     {
-        AHT20_measure();
+        aht20_measure();
         _delay_ms(WAIT_TIME_MEASURE);
     }
     i2c_stop();
