@@ -24,7 +24,7 @@ char dump[LINE_HEXDUMP_SIZE + sizeof(TERM_RESET_COLOR) + sizeof(TERM_RESET_COLOR
 
 void dump_put_line_at(char *dump, uint16_t cursor, uint16_t pos_byte_to_highlight)
 {
-    hex_read_dword(dump, cursor);
+    hex_read_byte_dword(dump, cursor);
     dump[LINE_HEXDUMP_OFFSET_HEX_DATA - 1] = ' ';
     uint8_t  offset_hex_data               = LINE_HEXDUMP_OFFSET_HEX_DATA;
     uint16_t end_cursor                    = cursor + SIZE_LINE;
@@ -45,14 +45,14 @@ void dump_put_line_at(char *dump, uint16_t cursor, uint16_t pos_byte_to_highligh
             {
                 memcpy(dump + offset_hex_data, TERM_SET_RED_COLOR, sizeof(TERM_SET_RED_COLOR) - 1);
                 offset_hex_data += sizeof(TERM_SET_RED_COLOR) - 1;
-                hex_read(dump + offset_hex_data, b);
+                hex_read_byte(dump + offset_hex_data, b);
                 offset_hex_data += 2; // HEX DIGIT WRITTEN
                 memcpy(dump + offset_hex_data, TERM_RESET_COLOR, sizeof(TERM_RESET_COLOR) - 1);
                 offset_hex_data += sizeof(TERM_RESET_COLOR) - 1;
             }
             else
             {
-                hex_read(dump + offset_hex_data, b);
+                hex_read_byte(dump + offset_hex_data, b);
                 offset_hex_data += 2; // HEX DIGIT WRITTEN
             }
             data >>= 8;

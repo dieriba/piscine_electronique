@@ -30,7 +30,7 @@ void hex_buffer_update(char *buffer, uint8_t *hex_value)
 {
     for (uint8_t i = 0; i < NB_HEX_TO_DISPLAY; i++)
     {
-        hex_read(buffer + (i * 4), hex_value[i]);
+        hex_read_byte(buffer + (i * 4), hex_value[i]);
     }
 }
 

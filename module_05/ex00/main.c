@@ -22,7 +22,7 @@ int main()
     while (1)
     {
         uint8_t rv1 = adc_read_adc0_8_bits();
-        hex_read(hex_buffer, rv1);
+        hex_read_byte(hex_buffer, rv1);
         uart_tx_send_str(hex_buffer);
         uart_tx_send_str("\r\n");
         _delay_ms(WAIT_TIME_MS);

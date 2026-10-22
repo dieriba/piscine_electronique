@@ -56,7 +56,7 @@ uint8_t twi_wait_for_transmission(void)
     TWI_STATUS status = (TWSR & 0xF8);
 #ifdef DEBUG
     uart_tx_send_str("Status: 0x");
-    hex_read(hex_buffer, status);
+    hex_read_byte(hex_buffer, status);
     uart_tx_send_str(hex_buffer);
     uart_tx_send_str(" - ");
     uart_tx_send_str(twi_get_status_msg(status));

@@ -59,7 +59,7 @@ void i2c_read(void)
 void print_hex_value(char c)
 {
     char hex_buffer[3] = {0};
-    hex_read(hex_buffer, c);
+    hex_read_byte(hex_buffer, c);
     uart_tx_send_str(hex_buffer);
 }
 
@@ -94,7 +94,7 @@ void AHT20_init(void)
     }
     twi_master_receive_from(AHT20_ADDR, (char *) &status, sizeof(status));
     char hex_buffer[3] = {0};
-    hex_read(hex_buffer, status);
+    hex_read_byte(hex_buffer, status);
     uart_tx_send_str("STATUS: ");
     uart_tx_send_str(hex_buffer);
     uart_tx_send_str("\r\n");

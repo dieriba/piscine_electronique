@@ -16,7 +16,7 @@ char dump[LINE_HEXDUMP_SIZE + 1];
 
 void dump_put_line_at(char *dump, uint16_t line)
 {
-    hex_read_dword(dump, line);
+    hex_read_byte_dword(dump, line);
     dump[LINE_HEXDUMP_OFFSET_HEX_DATA - 1] = ' ';
     dump[LINE_HEXDUMP_OFFSET_RAW_DATA]     = '|';
     uint8_t offset_hex_data                = LINE_HEXDUMP_OFFSET_HEX_DATA;
@@ -29,7 +29,7 @@ void dump_put_line_at(char *dump, uint16_t line)
         for (uint8_t i = 0; i < sizeof(uint32_t); i++)
         {
             uint8_t b = data & 0xFF;
-            hex_read(dump + offset_hex_data, b);
+            hex_read_byte(dump + offset_hex_data, b);
             offset_hex_data += 2; // HEX DIGIT WRITTEN
             dump[offset_hex_data] = ' ';
             offset_hex_data++;
