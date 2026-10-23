@@ -19,7 +19,7 @@ TARGET_ELF     				:= $(BIN_DIR)/$(TARGET_BASENAME).elf
 TARGET_HEX     				:= $(BIN_DIR)/$(TARGET_BASENAME).hex
 
 
-CFLAGS  					:= -Wall -Werror -Wextra -mmcu=$(MCU) -I. -MMD -MP -DDEBUG -DF_CPU=$(F_CPU) -g -Os -Wall
+CFLAGS  					:= -Wall -Werror -Wextra -mmcu=$(MCU) -I. -MMD -MP -DF_CPU=$(F_CPU) -g -Os -Wall
 
 DEVICE						:= /dev/ttyUSB0
 
@@ -42,6 +42,9 @@ $(OBJS_DIR)/%.o: %.c
 .PHONY: flash
 flash: $(TARGET_HEX)
 	avrdude -c arduino -P $(DEVICE) -b $(BAUD) -p $(MCU) -U flash:w:$(TARGET_HEX):i
+
+screen: all
+	screen /dev/ttyUSB0 $(BAUD)
 
 .PHONY: clean
 clean:

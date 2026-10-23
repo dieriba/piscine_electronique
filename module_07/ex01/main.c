@@ -3,7 +3,6 @@
 
 #include <avr/eeprom.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
 #include <util/delay.h>
 
@@ -118,17 +117,17 @@ uint8_t is_hex_digit(char c)
     return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'Z');
 }
 
-uint8_t parse_input(char *input, uint16_t *pos_byte, uint8_t *new_byte_value)
+uint8_t parse_input(const char *input, uint16_t *pos_byte, uint8_t *new_byte_value)
 {
-    char    *end;
-    uint32_t pos = strtol(input, &end, 16);
+    const char    *end;
+    uint32_t pos = hex_str_to_unsigned(input, &end);
 
     uint8_t dist = end - input;
     if (pos > MAX_VALUE_ADDR || *end != ' ' || (dist != 2 && dist != 3))
         return 0;
 
     input          = end + 1;
-    uint32_t new_b = strtol(input, &end, 16);
+    uint32_t new_b = hex_str_to_unsigned(input, &end);
 
     if (*end != '\0' || (end - input) != 2)
         return 0;
