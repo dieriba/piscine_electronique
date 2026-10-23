@@ -43,6 +43,9 @@ $(OBJS_DIR)/%.o: %.c
 flash: $(TARGET_HEX)
 	avrdude -c arduino -P $(DEVICE) -b $(BAUD) -p $(MCU) -U flash:w:$(TARGET_HEX):i
 
+screen: all
+	screen /dev/ttyUSB0 $(BAUD)
+
 .PHONY: clean
 clean:
 	rm -rf $(TARGET_DIR)

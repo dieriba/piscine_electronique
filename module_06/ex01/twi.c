@@ -182,7 +182,8 @@ uint8_t twi_master_receive_from(uint8_t addr, char *buffer, uint8_t len)
     }
 
     /* NACK the last received byte. */
-    return twi_read_byte_nack((uint8_t *) buffer + i);
+    status =  twi_read_byte_nack((uint8_t *) buffer + i);
+    return status;
 }
 
 /*

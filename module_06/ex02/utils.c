@@ -92,3 +92,4 @@ void hex_read_byte_dword(char *buffer, uint32_t hex)
         hex >>= 8;
     }
 }
+
