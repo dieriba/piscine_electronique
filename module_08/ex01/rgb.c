@@ -1,12 +1,42 @@
-#include "spi.h"
 #include <stdint.h>
 #include <util/delay.h>
+#include <avr/io.h>
 
 #define LEN_ARR(ARR) (sizeof(ARR) / sizeof(*ARR))
 #define APA102_MASK_BRIGHTNESS 0x1F
 #define APA102_LED_COUNT 3
 #define WAIT_TIME_MS 1000
 #define APA102_HEADER 0xE0
+
+static inline void spi_master_mode_set()
+{
+    /*SET SS output to ensure Master operation*/
+    DDRB |= (1 << PB5) | (1 << PB2);
+    /* Set MOSI and SCK output, all others input */
+    DDRB |= (1 << PB5) | (1 << PB3);
+    /* Enable SPI, Master, set clock rate fck/16 */
+    SPCR = (1<<SPE)|(1<<MSTR)|(1<<SPR0);
+}
+
+static inline uint8_t spi_master_transmit_byte(char cData)
+{
+    /* Start transmission */
+    SPDR = cData;
+    /* Wait for transmission complete */
+    while(!(SPSR & (1<<SPIF)))
+        ;
+    return SPDR;
+}
+
+static inline void spi_master_transmit_data(const void *data, uint16_t len)
+{
+    const char *p = data;
+    for (uint16_t i = 0; i < len; i++)
+    {
+        spi_master_transmit_byte(p[i]);
+    }
+}
+
 
 typedef struct
 {

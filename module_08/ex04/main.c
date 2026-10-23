@@ -22,6 +22,7 @@
 #define BASE_LEN 16
 #define MASK_BYTE 0xff
 #define POS_FIRST_LED 6
+#define DEFAULT_BRIGHTNESS 0x10
 
 typedef struct
 {
@@ -180,7 +181,7 @@ int main()
     uint8_t   led;
     uint8_t   pos = 0;
     init_spi();
-    apa102_init(0x10);
+    apa102_init(DEFAULT_BRIGHTNESS);
     uart_init_tx_rx(SENDER | RECEIVER);
     while (1)
     {
