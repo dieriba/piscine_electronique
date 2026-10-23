@@ -1,14 +1,9 @@
 #include "uart.h"
+#include "utils.h"
 
 #include <avr/eeprom.h>
-#include <ctype.h>
-#include <errno.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
-#include <util/crc16.h>
-#include <util/delay.h>
 
 #define BACKSPACE 0x7f
 #define ERASE_CHAR_TERM "\b \b"
@@ -63,7 +58,7 @@ typedef enum node_command
 
 uint8_t check_command_with_args(char *command, char *command_to_match, uint16_t len_command_to_match, char **arg)
 {
-    if (strncmp(command, command_to_match, len_command_to_match) == 0 && command[len_command_to_match] == ' ')
+    if (str_cmp_n(command, command_to_match, len_command_to_match) == 0 && command[len_command_to_match] == ' ')
     {
         *arg = command + len_command_to_match + 1;
         return 1;
@@ -73,12 +68,11 @@ uint8_t check_command_with_args(char *command, char *command_to_match, uint16_t 
 
 node_command parse_command(char *command, char **arg)
 {
-    if (strcmp(command, NODE_COMMAND_STATUS_STR) == 0)
+    if (str_cmp(command, NODE_COMMAND_STATUS_STR) == 0)
     {
         *arg = NULL;
         return NODE_COMMAND_STATUS;
     }
-
     if (check_command_with_args(command, NODE_COMMAND_SET_ID_STR, LEN_LITERAL_STR(NODE_COMMAND_SET_ID_STR), arg))
         return NODE_COMMAND_SET_ID;
 
@@ -88,7 +82,7 @@ node_command parse_command(char *command, char **arg)
     if (check_command_with_args(command, NODE_COMMAND_SET_TAG_STR, LEN_LITERAL_STR(NODE_COMMAND_SET_TAG_STR), arg))
         return NODE_COMMAND_SET_TAG;
 
-    if (strcmp(command, NODE_COMMAND_FACTORY_RESET_STR) == 0)
+    if (str_cmp(command, NODE_COMMAND_FACTORY_RESET_STR) == 0)
         return NODE_COMMAND_FACTORY_RESET;
 
     return NODE_COMMAND_UNKNOWN;
@@ -130,6 +124,44 @@ end:
     buffer[i] = 0;
     return i;
 }
+
+static  uint16_t
+_crc16_update(uint16_t __crc, uint8_t __data)
+{
+	uint8_t __tmp;
+	uint16_t __ret;
+
+	__asm__ __volatile__ (
+		"eor %A0,%2" "\n\t"
+		"mov %1,%A0" "\n\t"
+		"swap %1" "\n\t"
+		"eor %1,%A0" "\n\t"
+		"mov __tmp_reg__,%1" "\n\t"
+		"lsr %1" "\n\t"
+		"lsr %1" "\n\t"
+		"eor %1,__tmp_reg__" "\n\t"
+		"mov __tmp_reg__,%1" "\n\t"
+		"lsr %1" "\n\t"
+		"eor %1,__tmp_reg__" "\n\t"
+		"andi %1,0x07" "\n\t"
+		"mov __tmp_reg__,%A0" "\n\t"
+		"mov %A0,%B0" "\n\t"
+		"lsr %1" "\n\t"
+		"ror __tmp_reg__" "\n\t"
+		"ror %1" "\n\t"
+		"mov %B0,__tmp_reg__" "\n\t"
+		"eor %A0,%1" "\n\t"
+		"lsr __tmp_reg__" "\n\t"
+		"ror %1" "\n\t"
+		"eor %B0,__tmp_reg__" "\n\t"
+		"eor %A0,%1"
+		: "=r" (__ret), "=d" (__tmp)
+		: "r" (__data), "0" (__crc)
+		: "r0"
+	);
+	return __ret;
+}
+
 
 uint16_t update_crc(uint16_t crc, void *data, uint16_t len)
 {
@@ -173,15 +205,15 @@ void node_config_print(node_config *config)
 {
     char NUM_BUFFER[LEN_NUMBER + 1];
     uart_tx_send_str("Node ID: ");
-    ultoa(config->id, NUM_BUFFER, 10);
+    unsigned_to_str(config->id, NUM_BUFFER);
     uart_tx_send_str_with_nl(NUM_BUFFER);
 
     uart_tx_send_str("Priority: ");
-    itoa(config->priority, NUM_BUFFER, 10);
+    signed_to_str(config->priority, NUM_BUFFER);
     uart_tx_send_str_with_nl(NUM_BUFFER);
 
     uart_tx_send_str("Slot: ");
-    utoa(curr_slot, NUM_BUFFER, 10);
+    unsigned_to_str(curr_slot, NUM_BUFFER);
     uart_tx_send_str_with_nl(NUM_BUFFER);
 
     uart_tx_send_str("Tag: \"");
@@ -257,33 +289,36 @@ uint8_t parse_id(char *arg, void *output, uint16_t *len)
     }
 
     *len = FIELD_SIZE(node_config, id);
-    char *end;
-    errno       = 0;
-    uint32_t id = strtoul(arg, &end, 10);
-    if (arg == end || *end != '\0' || errno == ERANGE)
+    const char *end;
+    uint32_t id = dec_str_to_unsigned(arg, &end);
+    if (arg == end || *end != '\0')
     {
         send_err_msg("INVALID ID (only 0-9 char allowed): ", arg);
         return 0;
     }
 
-    memcpy(output, &id, sizeof(id));
+    mem_copy(output, &id, sizeof(id));
     return 1;
 }
 
 uint8_t parse_priority(char *arg, void *output, uint16_t *len)
 {
     *len = FIELD_SIZE(node_config, priority);
-    char *end;
-    errno            = 0;
-    int32_t priority = strtol(arg, &end, 10);
+    const char *end;
+    int32_t priority = dec_str_to_signed(arg, &end);
     if (arg == end || *end != '\0' || priority < INT16_MIN || priority > INT16_MAX)
     {
         send_err_msg("INVALID PRIORITY: ", arg);
         return 0;
     }
     int16_t value = (int16_t) priority;
-    memcpy(output, &value, FIELD_SIZE(node_config, priority));
+    mem_copy(output, &value, FIELD_SIZE(node_config, priority));
     return 1;
+}
+
+uint8_t char_is_alnum(char c)
+{
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9');
 }
 
 uint8_t parse_tag(char *arg, void *output, uint16_t *len)
@@ -298,7 +333,7 @@ uint8_t parse_tag(char *arg, void *output, uint16_t *len)
     arg++;
     while (arg[i] != 0 && arg[i] != '"')
     {
-        if (!isalnum(arg[i]) && arg[i] != '_' && arg[i] != '-')
+        if (!char_is_alnum(arg[i]) && arg[i] != '_' && arg[i] != '-')
         {
             send_err_msg("INVALID TAG (A-Z, a-z, 0-9, _, -): ", arg - 1);
             return 0;
@@ -324,7 +359,7 @@ uint8_t parse_tag(char *arg, void *output, uint16_t *len)
     }
     arg[i] = 0;
     *len   = CONFIG_TAG_SIZE + 1;
-    memcpy(output, arg, *len);
+    mem_copy(output, arg, *len);
     return 1;
 }
 
@@ -344,9 +379,9 @@ void node_save_data(char *arg, uint8_t offset_field, parse_func parser)
     node_config config;
     init_node_config_from_slot(&config, curr_slot);
     if (config.magic_number != MAGIC_NUMBER)
-        memset(&config, 0, sizeof(config));
+        mem_set(&config, 0, sizeof(config));
     config.magic_number = MAGIC_NUMBER;
-    memcpy(((char *) (&config)) + offset_field, data_buffer, len_data);
+    mem_copy(((char *) (&config)) + offset_field, data_buffer, len_data);
     config.crc = calcul_crc(&config);
     uint8_t success;
 #ifdef TRIGGER_RELOC
@@ -361,7 +396,7 @@ void node_save_data(char *arg, uint8_t offset_field, parse_func parser)
         for (uint8_t i = pow2_mod(curr_slot + 1, NB_CONFIG); i != curr_slot; i = pow2_mod(i + 1, NB_CONFIG))
         {
             uart_tx_send_str(EEPROM_MSG_RELOCATION);
-            itoa(i, data_buffer, 10);
+            signed_to_str(i, data_buffer);
             uart_tx_send_str(data_buffer);
             uart_tx_send_str("... ");
 
