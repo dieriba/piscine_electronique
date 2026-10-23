@@ -18,7 +18,7 @@
 #define TARGET_WAIT_TIME_MS 20
 #define B ((TARGET_WAIT_TIME_MS / MS) + 1)
 #define DEBOUNCE_TIME 10
-
+#define WAIT_TIME_MS 20
 typedef struct
 {
     uint8_t red;
@@ -163,6 +163,6 @@ int main()
     while (1)
     {
         color_value = adc_read_adc0_8_bits();
-        _delay_ms(20);
+        _delay_ms(WAIT_TIME_MS);
     }
 }
