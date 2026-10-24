@@ -17,4 +17,5 @@ void    uart_tx_send_str_with_nl(const char *s);
 uint8_t uart_rx_get_byte();
 uint8_t uart_rx_blocking_get_byte();
 uint8_t uart_rx_buffer_is_empty();
+uint8_t uart_rx_get_bytes(char *buffer, uint16_t len);
 #endif

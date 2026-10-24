@@ -1,9 +1,8 @@
 #include "spi.h"
 #include "uart.h"
+#include "utils.h"
 
 #include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
 #include <util/delay.h>
 
 #define LEN_ARR(ARR) (sizeof(ARR) / sizeof(*ARR))
@@ -23,6 +22,8 @@
 #define MASK_BYTE 0xff
 #define POS_FIRST_LED 6
 #define DEFAULT_BRIGHTNESS 0x10
+#define LEN_LIT_STR(str) (sizeof(str) - 1)
+#define FULLRAINBOW_WAIT_MS 10
 
 typedef struct
 {
@@ -43,6 +44,7 @@ static apa102_led leds[APA102_LED_COUNT];
 
 static const uint32_t APA102_START_FRAME = 0x00000000;
 static const uint32_t APA102_END_FRAME   = 0xFFFFFFFF;
+uint8_t               mode_full_rainbow;
 
 void init_spi()
 {
@@ -84,12 +86,14 @@ void apa102_update_led_colors(uint8_t index, const rgb_color *color)
     leds[index].blue  = color->blue;
 }
 
-uint8_t getline_and_send(char *buffer, uint16_t max_len)
+void getline_and_send(char *buffer, uint16_t max_len, uint16_t *cursor)
 {
-    uint8_t i = 0;
-    while (1)
+    uint16_t i = *cursor;
+    buffer += i;
+    uint16_t count = uart_rx_get_bytes(buffer, 1);
+    if (count != 0)
     {
-        char c = uart_rx_blocking_get_byte();
+        char c = *buffer;
         if ((c != '\r' && c != BACKSPACE) && i >= max_len)
         {
             while (i > 0)
@@ -98,45 +102,53 @@ uint8_t getline_and_send(char *buffer, uint16_t max_len)
                 i--;
             }
         }
-        buffer[i] = c;
         switch (c)
         {
         case '\r':
             uart_tx_send_str("\r\n");
-            goto end;
+            break;
         case BACKSPACE:
-            if (i == 0)
-                continue;
-            i -= 1;
-            uart_tx_send_str(ERASE_CHAR_TERM);
-            continue;
+            if (i != 0)
+            {
+                i -= 1;
+                uart_tx_send_str(ERASE_CHAR_TERM);
+            }
+            break;
         default:
             uart_tx_send_byte(c);
+            i++;
             break;
         }
-        i++;
     }
-end:
-    buffer[i] = 0;
-    return i;
+    *cursor = i;
+}
+
+void print_hex_value(char *name, char c)
+{
+    char hex_buffer[3] = {0};
+    uart_tx_send_str(name);
+    uart_tx_send_str(": ");
+    hex_read_byte(hex_buffer, c);
+    uart_tx_send_str_with_nl(hex_buffer);
 }
 
 uint8_t parse_input(uint8_t *led, rgb_color *rgb, char *buffer, uint8_t len_input)
 {
-    if (len_input != (sizeof(FORMAT_MSG) - 1) || (buffer[0] != FORMAT_MSG[0]))
+    if (len_input != LEN_LIT_STR(FORMAT_MSG) && buffer[0] != FORMAT_MSG[0])
         return 0;
 
     *led = (buffer[len_input - 1] - '0') - POS_FIRST_LED;
-    if (buffer[len_input - 2] != FORMAT_MSG[len_input - 2] || !(*led >= 6 && *led <= 8))
+
+    if (buffer[len_input - 2] != FORMAT_MSG[len_input - 2] || *led > 2)
         return 0;
+
     buffer[len_input - 2] = 0;
-    char    *end_ptr;
-    uint32_t value = strtol(buffer + 1, &end_ptr, BASE_LEN);
+    const char *end_ptr;
+    uint32_t    value = hex_str_to_unsigned(buffer + 1, &end_ptr);
 
     if (*end_ptr != 0)
         return 0;
-    uart_tx_send_str("BUFFER: ");
-    uart_tx_send_str_with_nl(buffer);
+
     rgb->blue = value & MASK_BYTE;
     value >>= 8;
     rgb->green = value & MASK_BYTE;
@@ -169,35 +181,62 @@ void full_rainbow(uint8_t pos)
 {
     for (uint8_t i = 0; i < APA102_LED_COUNT; i++)
     {
-        rgb_color color = wheel(pos + i * 85);
+        rgb_color color = wheel(pos);
         apa102_update_led_colors(i, &color);
+    }
+    _delay_ms(FULLRAINBOW_WAIT_MS);
+    apa102_display();
+}
+
+void do_display()
+{
+    char      user_input[BUFFER_SIZE + 1] = {0};
+    rgb_color rgb;
+    uint8_t   led;
+    uint16_t  cursor = 0;
+    uint8_t   pos    = 0;
+    while (1)
+    {
+        getline_and_send(user_input, BUFFER_SIZE, &cursor);
+        if (user_input[cursor] == '\r')
+        {
+            user_input[cursor] = 0;
+            if (cursor == LEN_LIT_STR(FULLRAINBOW) && str_cmp(user_input, FULLRAINBOW) == 0)
+            {
+                cursor            = 0;
+                pos               = 0;
+                mode_full_rainbow = 1;
+                uart_tx_send_str(MSG_ENTER_RGB);
+            }
+            else
+            {
+                mode_full_rainbow = 0;
+                if (!parse_input(&led, &rgb, user_input, cursor))
+                {
+                    uart_tx_send_str(MSG_ERROR_WRONG_FORMAT);
+                    return;
+                }
+                apa102_update_led_colors(led, &rgb);
+                apa102_display();
+                break;
+            }
+        }
+        if (mode_full_rainbow)
+        {
+            full_rainbow(pos++);
+        }
     }
 }
 
 int main()
 {
-    char      user_input[BUFFER_SIZE + 1] = {0};
-    rgb_color rgb;
-    uint8_t   led;
-    uint8_t   pos = 0;
+
     init_spi();
     apa102_init(DEFAULT_BRIGHTNESS);
     uart_init_tx_rx(SENDER | RECEIVER);
     while (1)
     {
         uart_tx_send_str(MSG_ENTER_RGB);
-        uint8_t len_input = getline_and_send(user_input, BUFFER_SIZE);
-        if (strcmp(user_input, FULLRAINBOW) != 0)
-        {
-            if (!parse_input(&led, &rgb, user_input, len_input))
-            {
-                uart_tx_send_str(MSG_ERROR_WRONG_FORMAT);
-                continue;
-            }
-            apa102_update_led_colors(led, &rgb);
-        }
-        else
-            full_rainbow(pos++);
-        apa102_display();
+        do_display();
     }
 }

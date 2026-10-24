@@ -3,7 +3,6 @@
 #include "port.h"
 #include "spi.h"
 #include "timer.h"
-#include "utils.h"
 
 #include <stddef.h>
 #include <stdint.h>
@@ -15,9 +14,10 @@
 #define APA102_HEADER 0xE0
 #define TIMER1_FREQ 15625
 #define MS 0.064
+#define DEFAULT_BRIGHTNESS 0x10
 #define TARGET_WAIT_TIME_MS 20
 #define B ((TARGET_WAIT_TIME_MS / MS) + 1)
-#define DEBOUNCE_TIME 10
+#define DEBOUNCE_TIME 15
 #define WAIT_TIME_MS 20
 typedef struct
 {
@@ -150,7 +150,7 @@ void init_interrupt()
 
 void setup()
 {
-    apa102_init(0x10);
+    apa102_init(DEFAULT_BRIGHTNESS);
     init_spi();
     init_gpio();
     adc_init();

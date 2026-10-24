@@ -148,6 +148,20 @@ uint8_t uart_rx_get_byte()
     return c;
 }
 
+uint8_t uart_rx_get_bytes(char *buffer, uint16_t len)
+{
+    uint16_t i = 0;
+    while (i < len && rx_buffer_tail != rx_buffer_head)
+    {
+        uint8_t c      = rx_buffer[rx_buffer_tail];
+        rx_buffer_tail = pow2_mod(rx_buffer_tail + 1, RX_BUFF_SIZE);
+        buffer[i]      = c;
+        i++;
+    }
+
+    return i;
+}
+
 /* Wait until a byte is received, then return it. */
 uint8_t uart_rx_blocking_get_byte()
 {
