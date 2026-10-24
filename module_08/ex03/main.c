@@ -16,7 +16,7 @@
 #define MS 0.064
 #define TARGET_WAIT_TIME_MS 20
 #define B ((TARGET_WAIT_TIME_MS / MS) + 1)
-
+#define DEFAULT_BRIGHTNESS 0x10
 #define ADC_MAX 255
 #define ADC_33_PCT (ADC_MAX / 3)
 #define ADC_66_PCT (ADC_MAX * 2 / 3)
@@ -125,7 +125,7 @@ int main()
     init_spi();
     init_timer1();
     adc_init();
-    apa102_init(0x10);
+    apa102_init(DEFAULT_BRIGHTNESS);
     interrupt_global_enable();
     while (1)
     {

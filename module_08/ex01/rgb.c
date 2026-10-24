@@ -7,7 +7,7 @@
 #define APA102_LED_COUNT 3
 #define WAIT_TIME_MS 1000
 #define APA102_HEADER 0xE0
-
+#define DEFAULT_BRIGHTNESS 0x10
 static inline void spi_master_mode_set()
 {
     /*SET SS output to ensure Master operation*/
@@ -110,7 +110,7 @@ void apa102_update_led_colors(uint8_t index, const rgb_color *color)
 int main()
 {
     init_spi();
-    apa102_init(0x10);
+    apa102_init(DEFAULT_BRIGHTNESS);
     uint8_t i = 0;
     while (1)
     {
