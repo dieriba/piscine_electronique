@@ -28,7 +28,7 @@ void adc_init()
     adc_prescaler_set_128();
     adc_enable_interrupt();
     adc_enable_auto_trigger_src_timer1_compare_b();
-    adc_read_set_adc0_8_bits();
+    adc_read_set_adc0_10_bits();
 }
 
 void init_rgb()
@@ -110,7 +110,6 @@ void init_timer1()
     timer1_set_compare_b(B);
     timer1_set_compare_a(B);
     timer1_set_mode_ctc();
-    timer1_set_prescaler_1024();
 }
 
 int main()

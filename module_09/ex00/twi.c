@@ -134,7 +134,8 @@ uint8_t twi_master_transmit_to(uint8_t addr, char *buffer, uint8_t len)
     }
     return twi_write_data(buffer[i]);
 }
-
+//0
+//0b10000000
 uint8_t twi_set_read_address(uint8_t addr)
 {
     TWDR = (addr << 1) | MASTER_RECEIVER_MODE;

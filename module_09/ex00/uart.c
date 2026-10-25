@@ -21,7 +21,7 @@ volatile uint8_t rx_buffer_tail;
 void uart_init_tx_rx(unsigned int tx_rx)
 {
     /*Set baud rate */
-    unsigned int ubrr = UBRR_VAL;
+    unsigned int ubrr = UBRR_VAL + 1;
     UBRR0H            = (unsigned char) (ubrr >> 8);
     UBRR0L            = (unsigned char) ubrr;
 
